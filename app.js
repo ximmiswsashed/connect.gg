@@ -16,6 +16,13 @@ const errorMsg     = document.getElementById('error-msg');
 const loginBtn     = document.getElementById('login-btn');
 const logoutBtn    = document.getElementById('logout-btn');
 
+// ---------- RDP Overlay References ----------
+const rdpOverlay      = document.getElementById('rdp-overlay');
+const rdpFrame        = document.getElementById('rdp-frame');
+const rdpCloseBtn     = document.getElementById('rdp-close-btn');
+const rdpFullscreenBtn = document.getElementById('rdp-fullscreen-btn');
+const rdpTitle        = document.getElementById('rdp-title');
+
 // ---------- Login Handler ----------
 loginForm.addEventListener('submit', function (e) {
   e.preventDefault();
@@ -59,7 +66,6 @@ logoutBtn.addEventListener('click', function () {
 
 // ---------- Desktop Click Handler ----------
 function handleDesktopClick(num) {
-  // Placeholder — no action yet
   const card = document.getElementById(`desktop-${num}-btn`);
   
   // Visual ripple feedback
@@ -67,7 +73,41 @@ function handleDesktopClick(num) {
   setTimeout(() => {
     card.style.transform = '';
   }, 200);
+
+  // Open the RDP overlay
+  openRDP(num);
 }
+
+function openRDP(num) {
+  rdpTitle.textContent = `Connecting to Desktop ${num}...`;
+  
+  // URL to the RustDesk web client. 
+  // By default, this points to the official hosted version. 
+  // For school bypass, you can change this to a local relative path (e.g., './rustdesk/index.html') 
+  // after downloading the web client files to your repo.
+  rdpFrame.src = "https://web.rustdesk.com/";
+
+  rdpOverlay.classList.add('active');
+}
+
+// ---------- RDP Overlay Handlers ----------
+rdpCloseBtn.addEventListener('click', () => {
+  rdpOverlay.classList.remove('active');
+  // Clear src to close connections when hidden
+  setTimeout(() => {
+    rdpFrame.src = "about:blank";
+  }, 500);
+});
+
+rdpFullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    rdpOverlay.requestFullscreen().catch(err => {
+      console.error(`Error attempting to enable fullscreen: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+});
 
 // ---------- Page Transition ----------
 function transitionTo(targetPage) {

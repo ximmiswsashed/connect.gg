@@ -198,6 +198,33 @@
     </footer>
   </section>
 
+  <!-- ========== REMOTE DESKTOP OVERLAY ========== -->
+  <div id="rdp-overlay" class="rdp-overlay">
+    <div class="rdp-header">
+      <div class="rdp-brand">
+        <span class="status-dot rdp-status"></span>
+        <span id="rdp-title">Connecting to Desktop...</span>
+      </div>
+      <div class="rdp-actions">
+        <button id="rdp-fullscreen-btn" class="rdp-btn" title="Toggle Fullscreen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+          </svg>
+        </button>
+        <button id="rdp-close-btn" class="rdp-btn close" title="Disconnect">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="rdp-frame-container">
+      <!-- We load the RustDesk web client here -->
+      <iframe id="rdp-frame" src="about:blank" frameborder="0" allow="clipboard-read; clipboard-write"></iframe>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
