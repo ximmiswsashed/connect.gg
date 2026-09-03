@@ -132,6 +132,10 @@ function connectWebRTC(desktopNum) {
         streamPlaceholder.style.display = 'none';
         setOverlayState('live');
         rdpConnStatus.textContent = 'Live';
+
+        // Set video element to optimal rendering
+        streamFeed.playsInline = true;
+        streamFeed.disablePictureInPicture = false;
       });
 
       activeCall.on('close', () => {
@@ -217,6 +221,18 @@ rdpFullscreenBtn.addEventListener('click', () => {
     rdpOverlay.requestFullscreen().catch(() => {});
   } else {
     document.exitFullscreen();
+  }
+});
+
+// Hide/show the header bar when entering/exiting fullscreen
+document.addEventListener('fullscreenchange', () => {
+  const header = rdpOverlay.querySelector('.rdp-header');
+  if (document.fullscreenElement === rdpOverlay) {
+    header.style.display = 'none';
+    // Also force the video to fill the entire screen
+    streamFeed.style.objectFit = 'contain';
+  } else {
+    header.style.display = '';
   }
 });
 

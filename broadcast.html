@@ -451,8 +451,16 @@
         // 1. Get screen capture (browser prompts user to pick monitor/window)
         log('Requesting screen capture...');
         localStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: { ideal: 60, max: 60 }, cursor: 'always' },
-          audio: false
+          video: {
+            width:     { ideal: 1920, max: 3840 },
+            height:    { ideal: 1080, max: 2160 },
+            frameRate: { ideal: 60, max: 60 },
+            cursor:    'always'
+          },
+          audio: false,
+          preferCurrentTab: false,
+          selfBrowserSurface: 'exclude',
+          systemAudio: 'exclude'
         });
 
         // Preview locally
@@ -495,6 +503,29 @@
         peer.on('call', (call) => {
           log(`Viewer connected! Answering call...`, 'ok');
           call.answer(localStream);
+
+          // Boost bitrate to 8 Mbps for crisp, high-quality video
+          setTimeout(async () => {
+            try {
+              const pc = call.peerConnection;
+              const senders = pc.getSenders();
+              const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+              if (videoSender) {
+                const params = videoSender.getParameters();
+                if (!params.encodings || params.encodings.length === 0) {
+                  params.encodings = [{}];
+                }
+                params.encodings[0].maxBitrate = 8_000_000;  // 8 Mbps
+                params.encodings[0].maxFramerate = 60;
+                params.degradationPreference = 'maintain-framerate';
+                await videoSender.setParameters(params);
+                log('Video bitrate set to 8 Mbps @ 60fps.', 'ok');
+              }
+            } catch (e) {
+              log(`Could not set bitrate: ${e.message}`, 'warn');
+            }
+          }, 1000);
+
           viewerCount++;
           viewerBadge.classList.add('visible');
           setStatus('Live — Viewer Connected', `${viewerCount} viewer(s) watching.`, 'live');
