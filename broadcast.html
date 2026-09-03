@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TuffyBlud | Broadcaster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --font-primary: 'Inter', sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+      --black:  #0a0a0a;
+      --dark:   #141414;
+      --card:   #1c1c1c;
+      --border: #2a2a2a;
+      --muted:  #555;
+      --gray:   #888;
+      --light:  #ccc;
+      --white:  #f5f5f5;
+      --green:  #22c55e;
+      --yellow: #eab308;
+      --red:    #ef4444;
+      --ease:   cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--font-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 28px;
+    }
+
+    /* ── Animated grid bg ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 44px; height: 44px;
+      background: var(--white);
+      color: var(--black);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .header-text p {
+      font-size: 0.8125rem;
+      color: var(--gray);
+      margin-top: 2px;
+    }
+
+    /* ── Status card ── */
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .status-left { display: flex; align-items: center; gap: 14px; }
+
+    .status-indicator {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.4s ease;
+    }
+    .status-indicator.waiting  { background: var(--yellow); animation: pulse 2s infinite; }
+    .status-indicator.live     { background: var(--green);  animation: pulse 1.5s infinite; }
+    .status-indicator.error    { background: var(--red); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .status-label {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+    .status-sub {
+      font-size: 0.8125rem;
+      color: var(--gray);
+      margin-top: 3px;
+    }
+
+    .peer-badge {
+      font-family: monospace;
+      font-size: 0.75rem;
+      padding: 6px 12px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--light);
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 160px;
+      padding: 14px 24px;
+      font-family: var(--font-display);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s var(--ease);
+    }
+
+    .btn-primary {
+      background: var(--white);
+      color: var(--black);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,255,255,0.12); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+    .btn-danger:hover { background: rgba(239,68,68,0.1); }
+    .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ── Desktop selector ── */
+    .desktop-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .desktop-btn {
+      flex: 1;
+      padding: 12px 16px;
+      background: var(--dark);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      color: var(--gray);
+      font-family: var(--font-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s var(--ease);
+    }
+    .desktop-btn:hover { border-color: var(--light); color: var(--white); }
+    .desktop-btn.active {
+      border-color: var(--white);
+      color: var(--white);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .desktop-btn-num {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .desktop-btn.active .desktop-btn-num { background: var(--white); color: var(--black); }
+
+    /* ── Preview ── */
+    .preview-wrap {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+    }
+    .preview-placeholder svg { opacity: 0.4; }
+    .preview-placeholder p { font-size: 0.875rem; }
+
+    #preview-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    .live-badge {
+      position: absolute;
+      top: 12px; left: 12px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .live-badge.visible { display: flex; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+
+    .viewer-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      display: none;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--white);
+    }
+    .viewer-badge.visible { display: flex; }
+
+    /* ── Log ── */
+    .log {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      height: 80px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--gray);
+      line-height: 1.6;
+    }
+    .log-line { display: block; }
+    .log-line.ok    { color: var(--green); }
+    .log-line.warn  { color: var(--yellow); }
+    .log-line.err   { color: var(--red); }
+
+    .footer-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .footer-note a { color: var(--gray); }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="4" width="40" height="40" rx="12" stroke="currentColor" stroke-width="3"/>
+          <circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="3"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>TuffyBlud Broadcaster</h1>
+        <p>Stream your screen to the portal — open this tab and keep it running at home.</p>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="status-card">
+      <div class="status-left">
+        <div class="status-indicator" id="status-dot"></div>
+        <div>
+          <div class="status-label" id="status-label">Not broadcasting</div>
+          <div class="status-sub" id="status-sub">Click Start Broadcast to begin</div>
+        </div>
+      </div>
+      <div class="peer-badge" id="peer-badge">ID: —</div>
+    </div>
+
+    <!-- Desktop selector -->
+    <div class="desktop-row">
+      <button class="desktop-btn active" id="desk-btn-1" onclick="selectDesktop(1)">
+        <span class="desktop-btn-num">1</span>
+        Desktop 1
+      </button>
+      <button class="desktop-btn" id="desk-btn-2" onclick="selectDesktop(2)">
+        <span class="desktop-btn-num">2</span>
+        Desktop 2
+      </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="start-btn" onclick="startBroadcast()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Start Broadcast
+      </button>
+      <button class="btn btn-danger" id="stop-btn" onclick="stopBroadcast()" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        Stop
+      </button>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap">
+      <div class="preview-placeholder" id="preview-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <p>Preview will appear here when broadcasting</p>
+      </div>
+      <video id="preview-video" autoplay muted playsinline></video>
+      <div class="live-badge" id="live-badge">
+        <span class="live-dot"></span> LIVE
+      </div>
+      <div class="viewer-badge" id="viewer-badge">👁 Viewer connected</div>
+    </div>
+
+    <!-- Log -->
+    <div class="log" id="log"></div>
+
+    <p class="footer-note">
+      Keep this tab open while at school. The portal will connect automatically.
+      &nbsp;|&nbsp; <a href="index.html">← Back to Portal</a>
+    </p>
+
+  </div>
+
+  <script>
+    // ── Constants ──────────────────────────────────────
+    // These MUST match the IDs in app.js on the portal side.
+    const PEER_IDS = {
+      1: 'tuffyblud-desktop-1',
+      2: 'tuffyblud-desktop-2'
+    };
+
+    // ── State ──────────────────────────────────────────
+    let peer = null;
+    let localStream = null;
+    let activeDesktop = 1;
+    let viewerCount = 0;
+
+    // ── DOM refs ───────────────────────────────────────
+    const statusDot   = document.getElementById('status-dot');
+    const statusLabel = document.getElementById('status-label');
+    const statusSub   = document.getElementById('status-sub');
+    const peerBadge   = document.getElementById('peer-badge');
+    const startBtn    = document.getElementById('start-btn');
+    const stopBtn     = document.getElementById('stop-btn');
+    const previewVid  = document.getElementById('preview-video');
+    const previewPH   = document.getElementById('preview-placeholder');
+    const liveBadge   = document.getElementById('live-badge');
+    const viewerBadge = document.getElementById('viewer-badge');
+    const logEl       = document.getElementById('log');
+
+    // ── Logging ───────────────────────────────────────
+    function log(msg, type = '') {
+      const span = document.createElement('span');
+      span.className = `log-line ${type}`;
+      const ts = new Date().toLocaleTimeString();
+      span.textContent = `[${ts}] ${msg}`;
+      logEl.appendChild(span);
+      logEl.appendChild(document.createElement('br'));
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // ── UI helpers ─────────────────────────────────────
+    function setStatus(label, sub, dotClass) {
+      statusLabel.textContent = label;
+      statusSub.textContent   = sub;
+      statusDot.className = `status-indicator ${dotClass}`;
+    }
+
+    function selectDesktop(num) {
+      activeDesktop = num;
+      document.querySelectorAll('.desktop-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`desk-btn-${num}`).classList.add('active');
+      log(`Switched to Desktop ${num}`);
+    }
+
+    // ── Main broadcast logic ───────────────────────────
+    async function startBroadcast() {
+      try {
+        // 1. Get screen capture (browser prompts user to pick monitor/window)
+        log('Requesting screen capture...');
+        localStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 60, max: 60 }, cursor: 'always' },
+          audio: false
+        });
+
+        // Preview locally
+        previewVid.srcObject = localStream;
+        previewVid.style.display = 'block';
+        previewPH.style.display  = 'none';
+        liveBadge.classList.add('visible');
+        log('Screen capture started.', 'ok');
+
+        // Handle user stopping share via browser UI
+        localStream.getVideoTracks()[0].addEventListener('ended', () => {
+          log('Screen share stopped by browser.', 'warn');
+          stopBroadcast();
+        });
+
+        // 2. Create PeerJS peer with fixed ID
+        const peerId = PEER_IDS[activeDesktop];
+        log(`Creating peer with ID: ${peerId}`);
+        setStatus('Connecting to PeerJS...', 'Setting up signaling server...', 'waiting');
+
+        peer = new Peer(peerId, {
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+          }
+        });
+
+        peer.on('open', (id) => {
+          log(`Peer ready. Waiting for viewer to connect...`, 'ok');
+          peerBadge.textContent = `ID: ${id}`;
+          setStatus('Live — Waiting for viewer', 'Portal will connect automatically.', 'waiting');
+          startBtn.disabled = true;
+          stopBtn.disabled  = false;
+        });
+
+        // 3. Answer any incoming calls with the stream
+        peer.on('call', (call) => {
+          log(`Viewer connected! Answering call...`, 'ok');
+          call.answer(localStream);
+          viewerCount++;
+          viewerBadge.classList.add('visible');
+          setStatus('Live — Viewer Connected', `${viewerCount} viewer(s) watching.`, 'live');
+
+          call.on('close', () => {
+            viewerCount = Math.max(0, viewerCount - 1);
+            log('Viewer disconnected.', 'warn');
+            if (viewerCount === 0) {
+              viewerBadge.classList.remove('visible');
+              setStatus('Live — Waiting for viewer', 'Portal disconnected. Waiting...', 'waiting');
+            }
+          });
+
+          call.on('error', (err) => {
+            log(`Call error: ${err}`, 'err');
+          });
+        });
+
+        peer.on('error', (err) => {
+          // If ID is already taken (another broadcaster running), auto-destroy and retry
+          if (err.type === 'unavailable-id') {
+            log(`Peer ID ${PEER_IDS[activeDesktop]} is already in use. Close other broadcaster tabs.`, 'err');
+            setStatus('ID Conflict', 'Close other broadcaster tabs and try again.', 'error');
+          } else {
+            log(`PeerJS error: ${err.message || err}`, 'err');
+            setStatus('Error', `${err.message || err}`, 'error');
+          }
+          stopBroadcast();
+        });
+
+        peer.on('disconnected', () => {
+          log('Disconnected from signaling server. Reconnecting...', 'warn');
+          if (peer && !peer.destroyed) peer.reconnect();
+        });
+
+      } catch (err) {
+        if (err.name === 'NotAllowedError') {
+          log('Screen capture permission denied.', 'err');
+        } else {
+          log(`Error: ${err.message}`, 'err');
+        }
+        setStatus('Error', err.message, 'error');
+      }
+    }
+
+    function stopBroadcast() {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      if (peer && !peer.destroyed) {
+        peer.destroy();
+        peer = null;
+      }
+      previewVid.srcObject = null;
+      previewVid.style.display = 'none';
+      previewPH.style.display  = 'flex';
+      liveBadge.classList.remove('visible');
+      viewerBadge.classList.remove('visible');
+      peerBadge.textContent = 'ID: —';
+      setStatus('Not broadcasting', 'Click Start Broadcast to begin.', '');
+      startBtn.disabled = false;
+      stopBtn.disabled  = true;
+      viewerCount = 0;
+      log('Broadcast stopped.', 'warn');
+    }
+
+    log('Broadcaster ready. Select a desktop and click Start Broadcast.');
+  </script>
+</body>
+</html>

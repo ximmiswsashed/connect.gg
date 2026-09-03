@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </head>
 <body>
 
@@ -202,18 +203,10 @@
   <div id="rdp-overlay" class="rdp-overlay">
     <div class="rdp-header">
       <div class="rdp-brand">
-        <span class="status-dot rdp-status"></span>
+        <span class="status-dot rdp-status" id="rdp-status-dot"></span>
         <span id="rdp-title">Connecting to Desktop...</span>
       </div>
-      <div class="stream-url-container">
-        <select id="monitor-select" class="rdp-select">
-          <option value="1">Monitor 1</option>
-          <option value="2">Monitor 2</option>
-          <option value="0">All Monitors</option>
-        </select>
-        <input type="url" id="stream-url-input" placeholder="Paste Cloudflare URL here..." autocomplete="off">
-        <button id="stream-connect-btn" class="rdp-btn">Connect</button>
-      </div>
+      <div class="rdp-conn-status" id="rdp-conn-status">Initializing...</div>
       <div class="rdp-actions">
         <button id="rdp-fullscreen-btn" class="rdp-btn" title="Toggle Fullscreen">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -229,10 +222,16 @@
       </div>
     </div>
     <div class="rdp-frame-container">
+      <!-- WebRTC state: Connecting spinner -->
       <div class="stream-placeholder" id="stream-placeholder">
-        <p>Awaiting video stream connection...</p>
+        <div class="conn-spinner" id="conn-spinner">
+          <div class="spinner-ring"></div>
+          <p id="conn-message">Connecting to broadcaster...</p>
+          <p class="conn-hint">Make sure broadcast.html is open at home.</p>
+        </div>
       </div>
-      <img id="stream-feed" src="" alt="Live Video Feed" style="display: none;">
+      <!-- Live video feed -->
+      <video id="stream-feed" autoplay playsinline style="display:none;"></video>
     </div>
   </div>
 
