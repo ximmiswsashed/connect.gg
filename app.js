@@ -25,6 +25,7 @@ const streamUrlInput  = document.getElementById('stream-url-input');
 const streamConnectBtn = document.getElementById('stream-connect-btn');
 const streamFeed      = document.getElementById('stream-feed');
 const streamPlaceholder = document.getElementById('stream-placeholder');
+const monitorSelect   = document.getElementById('monitor-select');
 
 // ---------- Login Handler ----------
 loginForm.addEventListener('submit', function (e) {
@@ -94,16 +95,23 @@ function openRDP(num) {
 }
 
 // ---------- Stream Connection Logic ----------
-streamConnectBtn.addEventListener('click', () => {
+function connectStream() {
   let url = streamUrlInput.value.trim();
   if (!url) return;
 
   // Make sure it has /video_feed appended
-  if (!url.endsWith('/video_feed')) {
+  if (!url.includes('/video_feed')) {
     // Strip trailing slash if present
     if (url.endsWith('/')) url = url.slice(0, -1);
     url = url + '/video_feed';
+  } else {
+    // Clean up existing query params if re-generating
+    url = url.split('?')[0];
   }
+
+  // Append monitor selection
+  const monitorId = monitorSelect.value;
+  url = `${url}?monitor=${monitorId}`;
 
   streamFeed.src = url;
   
@@ -117,6 +125,14 @@ streamConnectBtn.addEventListener('click', () => {
     streamPlaceholder.style.display = 'flex';
     streamFeed.style.display = 'none';
   };
+}
+
+streamConnectBtn.addEventListener('click', connectStream);
+
+monitorSelect.addEventListener('change', () => {
+  if (streamFeed.src && streamFeed.src !== window.location.href && streamFeed.style.display === 'block') {
+    connectStream();
+  }
 });
 
 // ---------- RDP Overlay Handlers ----------
