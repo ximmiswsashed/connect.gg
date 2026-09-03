@@ -18,10 +18,13 @@ const logoutBtn    = document.getElementById('logout-btn');
 
 // ---------- RDP Overlay References ----------
 const rdpOverlay      = document.getElementById('rdp-overlay');
-const rdpFrame        = document.getElementById('rdp-frame');
 const rdpCloseBtn     = document.getElementById('rdp-close-btn');
 const rdpFullscreenBtn = document.getElementById('rdp-fullscreen-btn');
 const rdpTitle        = document.getElementById('rdp-title');
+const streamUrlInput  = document.getElementById('stream-url-input');
+const streamConnectBtn = document.getElementById('stream-connect-btn');
+const streamFeed      = document.getElementById('stream-feed');
+const streamPlaceholder = document.getElementById('stream-placeholder');
 
 // ---------- Login Handler ----------
 loginForm.addEventListener('submit', function (e) {
@@ -81,21 +84,47 @@ function handleDesktopClick(num) {
 function openRDP(num) {
   rdpTitle.textContent = `Connecting to Desktop ${num}...`;
   
-  // URL to the RustDesk web client. 
-  // By default, this points to the official hosted version. 
-  // For school bypass, you can change this to a local relative path (e.g., './rustdesk/index.html') 
-  // after downloading the web client files to your repo.
-  rdpFrame.src = "https://web.rustdesk.com/";
+  // Reset UI
+  streamUrlInput.value = '';
+  streamFeed.src = '';
+  streamFeed.style.display = 'none';
+  streamPlaceholder.style.display = 'flex';
 
   rdpOverlay.classList.add('active');
 }
 
+// ---------- Stream Connection Logic ----------
+streamConnectBtn.addEventListener('click', () => {
+  let url = streamUrlInput.value.trim();
+  if (!url) return;
+
+  // Make sure it has /video_feed appended
+  if (!url.endsWith('/video_feed')) {
+    // Strip trailing slash if present
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    url = url + '/video_feed';
+  }
+
+  streamFeed.src = url;
+  
+  streamFeed.onload = () => {
+    streamPlaceholder.style.display = 'none';
+    streamFeed.style.display = 'block';
+  };
+  
+  streamFeed.onerror = () => {
+    streamPlaceholder.innerHTML = '<p style="color:#ef4444;">Failed to connect to stream. Check URL.</p>';
+    streamPlaceholder.style.display = 'flex';
+    streamFeed.style.display = 'none';
+  };
+});
+
 // ---------- RDP Overlay Handlers ----------
 rdpCloseBtn.addEventListener('click', () => {
   rdpOverlay.classList.remove('active');
-  // Clear src to close connections when hidden
+  // Stop the stream when hidden
   setTimeout(() => {
-    rdpFrame.src = "about:blank";
+    streamFeed.src = '';
   }, 500);
 });
 

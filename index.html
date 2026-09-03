@@ -205,6 +205,10 @@
         <span class="status-dot rdp-status"></span>
         <span id="rdp-title">Connecting to Desktop...</span>
       </div>
+      <div class="stream-url-container">
+        <input type="url" id="stream-url-input" placeholder="Paste Cloudflare URL here..." autocomplete="off">
+        <button id="stream-connect-btn" class="rdp-btn">Connect</button>
+      </div>
       <div class="rdp-actions">
         <button id="rdp-fullscreen-btn" class="rdp-btn" title="Toggle Fullscreen">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -220,8 +224,10 @@
       </div>
     </div>
     <div class="rdp-frame-container">
-      <!-- We load the RustDesk web client here -->
-      <iframe id="rdp-frame" src="about:blank" frameborder="0" allow="clipboard-read; clipboard-write"></iframe>
+      <div class="stream-placeholder" id="stream-placeholder">
+        <p>Awaiting video stream connection...</p>
+      </div>
+      <img id="stream-feed" src="" alt="Live Video Feed" style="display: none;">
     </div>
   </div>
 
