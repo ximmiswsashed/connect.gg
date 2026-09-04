@@ -922,3 +922,18 @@ body {
   object-fit: contain;
   background: #000;
 }
+
+/* ── Fullscreen overrides ── */
+.rdp-overlay:fullscreen .rdp-header {
+  display: none !important;
+}
+
+.rdp-overlay:fullscreen .rdp-frame-container {
+  height: 100vh !important;
+  width: 100vw !important;
+}
+
+.rdp-overlay:fullscreen #stream-feed {
+  object-fit: contain !important; 
+  /* Use 'cover' instead if you want zero black bars but cropped edges */
+}

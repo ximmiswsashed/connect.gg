@@ -224,18 +224,6 @@ rdpFullscreenBtn.addEventListener('click', () => {
   }
 });
 
-// Hide/show the header bar when entering/exiting fullscreen
-document.addEventListener('fullscreenchange', () => {
-  const header = rdpOverlay.querySelector('.rdp-header');
-  if (document.fullscreenElement === rdpOverlay) {
-    header.style.display = 'none';
-    // Also force the video to fill the entire screen
-    streamFeed.style.objectFit = 'contain';
-  } else {
-    header.style.display = '';
-  }
-});
-
 // ── Page Transition ───────────────────────────────────
 function transitionTo(targetPage) {
   const activePage = document.querySelector('.page.active');

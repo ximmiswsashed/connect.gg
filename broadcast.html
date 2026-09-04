@@ -463,6 +463,12 @@
           systemAudio: 'exclude'
         });
 
+        // Set content hint to detail to prioritize crisp resolution (prevents blurriness/after-images)
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack && 'contentHint' in videoTrack) {
+          videoTrack.contentHint = 'detail';
+        }
+
         // Preview locally
         previewVid.srcObject = localStream;
         previewVid.style.display = 'block';
@@ -515,11 +521,10 @@
                 if (!params.encodings || params.encodings.length === 0) {
                   params.encodings = [{}];
                 }
-                params.encodings[0].maxBitrate = 8_000_000;  // 8 Mbps
-                params.encodings[0].maxFramerate = 60;
-                params.degradationPreference = 'maintain-framerate';
+                // Set a reasonable max bitrate (4 Mbps) to prevent network congestion that causes lag
+                params.encodings[0].maxBitrate = 4_000_000;
                 await videoSender.setParameters(params);
-                log('Video bitrate set to 8 Mbps @ 60fps.', 'ok');
+                log('Video bitrate optimized for stability (4 Mbps).', 'ok');
               }
             } catch (e) {
               log(`Could not set bitrate: ${e.message}`, 'warn');
