@@ -508,6 +508,26 @@
         // 3. Answer any incoming calls with the stream
         peer.on('call', (call) => {
           log(`Viewer connected! Answering call...`, 'ok');
+          
+          // FIX: Force H264/VP9 to bypass the Chromium VP8 "green hue" hardware encoder bug
+          try {
+            const pc = call.peerConnection;
+            const caps = RTCRtpSender.getCapabilities('video');
+            if (caps && caps.codecs) {
+              const preferred = caps.codecs.filter(c => c.mimeType.includes('H264') || c.mimeType.includes('VP9'));
+              if (preferred.length > 0) {
+                pc.getTransceivers().forEach(t => {
+                  if (t.sender && t.sender.track && t.sender.track.kind === 'video' && t.setCodecPreferences) {
+                    t.setCodecPreferences(preferred);
+                  }
+                });
+                log('Codec set to H264/VP9 to fix color hue.', 'ok');
+              }
+            }
+          } catch(e) {
+            log('Could not set codec preferences.', 'warn');
+          }
+
           call.answer(localStream);
 
           // Boost bitrate to 8 Mbps for crisp, high-quality video

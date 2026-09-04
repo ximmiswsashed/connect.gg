@@ -218,7 +218,12 @@ rdpCloseBtn.addEventListener('click', closeOverlay);
 
 rdpFullscreenBtn.addEventListener('click', () => {
   if (!document.fullscreenElement) {
-    rdpOverlay.requestFullscreen().catch(() => {});
+    // Fullscreen JUST the video element natively, skipping all CSS/overlay layout bugs
+    if (streamFeed.srcObject) {
+      streamFeed.requestFullscreen().catch(() => {});
+    } else {
+      rdpOverlay.requestFullscreen().catch(() => {});
+    }
   } else {
     document.exitFullscreen();
   }
