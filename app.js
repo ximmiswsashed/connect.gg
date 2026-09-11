@@ -1,204 +1,238 @@
-/* ===================================================
-   TuffyBlud Portal — Application Logic (WebRTC Edition)
-   =================================================== */
+/*
+ * TuffyBlud Portal — viewer and paired WebRTC control channel.
+ * The pairing code is entered by the owner and kept only in page memory.
+ */
 
-// ── Fixed Peer IDs (must match broadcast.html) ──────
-const PEER_IDS = {
-  1: 'tuffyblud-desktop-1',
-  2: 'tuffyblud-desktop-2'
-};
+const PEER_IDS = { 1: 'tuffyblud-desktop-1', 2: 'tuffyblud-desktop-2' };
 
-// ── Credentials ─────────────────────────────────────
-const VALID_USER = 'tuffyblud';
-const VALID_PASS = '07130713';
-
-// ── DOM References ───────────────────────────────────
-const loginPage       = document.getElementById('login-page');
-const dashPage        = document.getElementById('dashboard-page');
-const loginForm       = document.getElementById('login-form');
-const usernameIn      = document.getElementById('username');
-const passwordIn      = document.getElementById('password');
-const errorMsg        = document.getElementById('error-msg');
-const loginBtn        = document.getElementById('login-btn');
-const logoutBtn       = document.getElementById('logout-btn');
-
-// Overlay DOM
-const rdpOverlay      = document.getElementById('rdp-overlay');
-const rdpCloseBtn     = document.getElementById('rdp-close-btn');
+const loginPage = document.getElementById('login-page');
+const dashPage = document.getElementById('dashboard-page');
+const loginForm = document.getElementById('login-form');
+const pairingCodeIn = document.getElementById('pairing-code');
+const errorMsg = document.getElementById('error-msg');
+const loginBtn = document.getElementById('login-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const rdpOverlay = document.getElementById('rdp-overlay');
+const rdpCloseBtn = document.getElementById('rdp-close-btn');
 const rdpFullscreenBtn = document.getElementById('rdp-fullscreen-btn');
-const rdpTitle        = document.getElementById('rdp-title');
-const rdpStatusDot    = document.getElementById('rdp-status-dot');
-const rdpConnStatus   = document.getElementById('rdp-conn-status');
-const streamFeed      = document.getElementById('stream-feed');
+const rdpTitle = document.getElementById('rdp-title');
+const rdpStatusDot = document.getElementById('rdp-status-dot');
+const rdpConnStatus = document.getElementById('rdp-conn-status');
+const streamFeed = document.getElementById('stream-feed');
 const streamPlaceholder = document.getElementById('stream-placeholder');
-const connMessage     = document.getElementById('conn-message');
+const connMessage = document.getElementById('conn-message');
+const controlHint = document.getElementById('control-hint');
 
-// ── WebRTC state ─────────────────────────────────────
 let viewerPeer = null;
-let activeCall  = null;
+let activeCall = null;
+let controlConnection = null;
 let currentDesktopNum = 1;
+let pairingCode = '';
+let controlReady = false;
+let lastPointerEvent = null;
+let pointerFrameQueued = false;
+let lastPointerPoint = { x: 0.5, y: 0.5 };
 
-// ── Login Handler ─────────────────────────────────────
-loginForm.addEventListener('submit', function (e) {
-  e.preventDefault();
-  const user = usernameIn.value.trim().toLowerCase();
-  const pass = passwordIn.value.trim();
+loginForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  pairingCode = pairingCodeIn.value.trim();
   hideError();
-
-  if (user !== VALID_USER || pass !== VALID_PASS) {
-    showError('Invalid username or password. Please try again.');
-    loginBtn.closest('.login-card').classList.add('shake');
-    setTimeout(() => loginBtn.closest('.login-card').classList.remove('shake'), 600);
+  if (pairingCode.length < 16) {
+    showError('Enter the 16+ character pairing code configured on your home PC.');
     return;
   }
-
   loginBtn.classList.add('loading');
   loginBtn.disabled = true;
-  setTimeout(() => { transitionTo(dashPage); }, 1000);
+  setTimeout(() => transitionTo(dashPage), 350);
 });
 
-// ── Logout Handler ─────────────────────────────────────
-logoutBtn.addEventListener('click', function () {
+logoutBtn.addEventListener('click', () => {
   closeOverlay();
+  pairingCode = '';
   transitionTo(loginPage);
   setTimeout(() => {
     loginForm.reset();
     loginBtn.classList.remove('loading');
     loginBtn.disabled = false;
     hideError();
-  }, 600);
+  }, 550);
 });
 
-// ── Desktop Click ─────────────────────────────────────
 function handleDesktopClick(num) {
   const card = document.getElementById(`desktop-${num}-btn`);
   card.style.transform = 'scale(0.97)';
-  setTimeout(() => { card.style.transform = ''; }, 200);
+  setTimeout(() => { card.style.transform = ''; }, 180);
   openDesktop(num);
 }
 
 function openDesktop(num) {
   currentDesktopNum = num;
   rdpTitle.textContent = `Desktop ${num}`;
-
-  // Reset overlay state
-  setOverlayState('connecting');
   streamFeed.style.display = 'none';
   streamFeed.srcObject = null;
   streamPlaceholder.style.display = 'flex';
-
+  controlHint.textContent = 'Pairing an encrypted control channel…';
   rdpOverlay.classList.add('active');
-
-  // Small delay so animation settles before heavy WebRTC init
-  setTimeout(() => connectWebRTC(num), 300);
+  setOverlayState('connecting');
+  setTimeout(() => connectWebRTC(num), 250);
 }
 
-// ── WebRTC Viewer Connection ───────────────────────────
 function connectWebRTC(desktopNum) {
-  // Tear down any existing peer cleanly
   teardownPeer();
-
-  const targetId = PEER_IDS[desktopNum];
   setOverlayState('connecting');
-  connMessage.textContent = `Connecting to Desktop ${desktopNum}...`;
+  connMessage.textContent = `Connecting to Desktop ${desktopNum}…`;
 
-  // Create a viewer peer with a random ID
   viewerPeer = new Peer({
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-      ]
-    }
+    config: { iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' }
+    ] }
   });
 
-  viewerPeer.on('open', (id) => {
-    rdpConnStatus.textContent = 'Calling broadcaster...';
-
-    // We need to send a minimal blank stream as the "caller" side
-    // The broadcaster answers with the real screen stream
-    const canvas = document.createElement('canvas');
-    canvas.width = 1; canvas.height = 1;
-    const blankStream = canvas.captureStream(1);
-
-    try {
-      activeCall = viewerPeer.call(targetId, blankStream);
-
-      // Receive the broadcaster's screen stream
-      activeCall.on('stream', (remoteStream) => {
-        streamFeed.srcObject = remoteStream;
-        streamFeed.style.display  = 'block';
-        streamPlaceholder.style.display = 'none';
-        setOverlayState('live');
-        rdpConnStatus.textContent = 'Live';
-
-        // Set video element to optimal rendering
-        streamFeed.playsInline = true;
-        streamFeed.disablePictureInPicture = false;
-      });
-
-      activeCall.on('close', () => {
-        if (rdpOverlay.classList.contains('active')) {
-          setOverlayState('disconnected');
-          rdpConnStatus.textContent = 'Broadcaster disconnected';
-          streamFeed.style.display = 'none';
-          streamPlaceholder.style.display = 'flex';
-          connMessage.textContent = 'Broadcaster disconnected. Retrying...';
-          // Auto-retry after 3s
-          setTimeout(() => {
-            if (rdpOverlay.classList.contains('active')) {
-              connectWebRTC(currentDesktopNum);
-            }
-          }, 3000);
-        }
-      });
-
-      activeCall.on('error', (err) => {
-        connMessage.textContent = `Call error — retrying...`;
-        setTimeout(() => {
-          if (rdpOverlay.classList.contains('active')) connectWebRTC(currentDesktopNum);
-        }, 3000);
-      });
-
-    } catch (err) {
-      setOverlayState('error');
-      connMessage.textContent = 'Failed to call broadcaster. Is it running?';
-    }
+  viewerPeer.on('open', () => {
+    controlConnection = viewerPeer.connect(PEER_IDS[desktopNum], { reliable: true });
+    controlConnection.on('open', () => {
+      controlConnection.send({ type: 'authenticate', pairingCode, desktop: desktopNum });
+      rdpConnStatus.textContent = 'Authorizing…';
+    });
+    controlConnection.on('data', (message) => handleControlMessage(message, desktopNum));
+    controlConnection.on('close', () => {
+      controlReady = false;
+      if (rdpOverlay.classList.contains('active')) controlHint.textContent = 'Control channel disconnected.';
+    });
+    controlConnection.on('error', () => failOrRetry('Control channel error — retrying…'));
   });
 
-  viewerPeer.on('error', (err) => {
-    if (err.type === 'peer-unavailable') {
-      // Broadcaster isn't online yet — retry
-      rdpConnStatus.textContent = 'Broadcaster offline — retrying in 5s...';
-      connMessage.textContent = 'Make sure broadcast.html is open at home.';
-      setTimeout(() => {
-        if (rdpOverlay.classList.contains('active')) connectWebRTC(currentDesktopNum);
-      }, 5000);
+  viewerPeer.on('error', (error) => {
+    if (error.type === 'peer-unavailable') {
+      failOrRetry('Home broadcaster is offline. Make sure it is running.');
     } else {
-      setOverlayState('error');
-      rdpConnStatus.textContent = `Error: ${err.type}`;
+      failOrRetry(`Connection error: ${error.type || 'unknown'}`);
     }
   });
-
   viewerPeer.on('disconnected', () => {
     if (!viewerPeer?.destroyed) viewerPeer.reconnect();
   });
 }
 
-// ── Overlay State ─────────────────────────────────────
-function setOverlayState(state) {
-  rdpStatusDot.className = 'status-dot rdp-status';
-  if (state === 'live') {
-    rdpStatusDot.style.background = '#22c55e';
-  } else if (state === 'error' || state === 'disconnected') {
-    rdpStatusDot.style.background = '#ef4444';
-  } else {
-    rdpStatusDot.style.background = '#eab308'; // yellow = connecting
+function handleControlMessage(message, desktopNum) {
+  if (!message || typeof message !== 'object') return;
+  if (message.type !== 'auth-result') return;
+  if (!message.ok) {
+    returnToPairing('Pairing was rejected. Check the code and try again.');
+    return;
   }
+  controlReady = true;
+  controlHint.textContent = 'Control active — click the screen to send mouse and keyboard input.';
+  rdpConnStatus.textContent = 'Authorized — starting video…';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  activeCall = viewerPeer.call(PEER_IDS[desktopNum], canvas.captureStream(1));
+  activeCall.on('stream', (remoteStream) => {
+    streamFeed.srcObject = remoteStream;
+    streamFeed.style.display = 'block';
+    streamPlaceholder.style.display = 'none';
+    streamFeed.focus({ preventScroll: true });
+    setOverlayState('live');
+    rdpConnStatus.textContent = 'Live — Control active';
+  });
+  activeCall.on('close', () => failOrRetry('Broadcaster disconnected — retrying…'));
+  activeCall.on('error', () => failOrRetry('Video connection error — retrying…'));
 }
 
-// ── Close / Cleanup ────────────────────────────────────
+function failOrRetry(message) {
+  controlReady = false;
+  if (!rdpOverlay.classList.contains('active')) return;
+  setOverlayState('disconnected');
+  rdpConnStatus.textContent = message;
+  connMessage.textContent = message;
+  controlHint.textContent = 'Waiting to reconnect…';
+  setTimeout(() => {
+    if (rdpOverlay.classList.contains('active')) connectWebRTC(currentDesktopNum);
+  }, 3500);
+}
+
+function sendControl(message) {
+  if (controlReady && controlConnection?.open) controlConnection.send(message);
+}
+
+function normalizedPointer(event, clampToScreen = false) {
+  const rect = streamFeed.getBoundingClientRect();
+  const videoWidth = streamFeed.videoWidth;
+  const videoHeight = streamFeed.videoHeight;
+  if (!videoWidth || !videoHeight) return null;
+  const scale = Math.min(rect.width / videoWidth, rect.height / videoHeight);
+  const shownWidth = videoWidth * scale;
+  const shownHeight = videoHeight * scale;
+  const left = rect.left + (rect.width - shownWidth) / 2;
+  const top = rect.top + (rect.height - shownHeight) / 2;
+  if (!clampToScreen && (event.clientX < left || event.clientX > left + shownWidth || event.clientY < top || event.clientY > top + shownHeight)) return null;
+  const point = {
+    x: Math.max(0, Math.min(1, (event.clientX - left) / shownWidth)),
+    y: Math.max(0, Math.min(1, (event.clientY - top) / shownHeight))
+  };
+  lastPointerPoint = point;
+  return point;
+}
+
+function queuePointerMove(event) {
+  lastPointerEvent = event;
+  if (pointerFrameQueued) return;
+  pointerFrameQueued = true;
+  requestAnimationFrame(() => {
+    pointerFrameQueued = false;
+    const point = normalizedPointer(lastPointerEvent);
+    if (point) sendControl({ type: 'input', kind: 'pointer', action: 'move', ...point });
+  });
+}
+
+streamFeed.addEventListener('pointermove', queuePointerMove);
+streamFeed.addEventListener('pointerdown', (event) => {
+  const point = normalizedPointer(event);
+  if (!point) return;
+  event.preventDefault();
+  streamFeed.focus({ preventScroll: true });
+  streamFeed.setPointerCapture?.(event.pointerId);
+  sendControl({ type: 'input', kind: 'pointer', action: 'down', button: event.button, ...point });
+});
+streamFeed.addEventListener('pointerup', (event) => {
+  const point = normalizedPointer(event, true) || lastPointerPoint;
+  event.preventDefault();
+  sendControl({ type: 'input', kind: 'pointer', action: 'up', button: event.button, ...point });
+});
+streamFeed.addEventListener('contextmenu', (event) => event.preventDefault());
+streamFeed.addEventListener('wheel', (event) => {
+  const point = normalizedPointer(event);
+  if (!point) return;
+  event.preventDefault();
+  sendControl({ type: 'input', kind: 'pointer', action: 'wheel', deltaX: event.deltaX, deltaY: event.deltaY, ...point });
+}, { passive: false });
+
+document.addEventListener('keydown', (event) => {
+  if (!controlReady || !rdpOverlay.classList.contains('active')) return;
+  // Let the browser retain only its unavoidable safety shortcuts.
+  if (event.code === 'F11' || (event.ctrlKey && event.shiftKey && event.code === 'KeyI')) return;
+  event.preventDefault();
+  if (!event.repeat) sendControl({ type: 'input', kind: 'key', action: 'down', code: event.code });
+});
+document.addEventListener('keyup', (event) => {
+  if (!controlReady || !rdpOverlay.classList.contains('active')) return;
+  event.preventDefault();
+  sendControl({ type: 'input', kind: 'key', action: 'up', code: event.code });
+});
+window.addEventListener('blur', () => sendControl({ type: 'release-inputs' }));
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) sendControl({ type: 'release-inputs' });
+});
+
+function setOverlayState(state) {
+  rdpStatusDot.className = 'status-dot rdp-status';
+  rdpStatusDot.style.background = state === 'live' ? '#22c55e' : (state === 'error' || state === 'disconnected' ? '#ef4444' : '#eab308');
+}
+
 function closeOverlay() {
   rdpOverlay.classList.remove('active');
   setTimeout(() => {
@@ -206,30 +240,38 @@ function closeOverlay() {
     streamFeed.srcObject = null;
     streamFeed.style.display = 'none';
     streamPlaceholder.style.display = 'flex';
-  }, 500);
+  }, 350);
+}
+
+function returnToPairing(message) {
+  rdpOverlay.classList.remove('active');
+  teardownPeer();
+  pairingCode = '';
+  transitionTo(loginPage);
+  setTimeout(() => {
+    loginForm.reset();
+    loginBtn.classList.remove('loading');
+    loginBtn.disabled = false;
+    showError(message);
+  }, 600);
 }
 
 function teardownPeer() {
+  controlReady = false;
+  if (controlConnection) {
+    try { controlConnection.send({ type: 'release' }); controlConnection.close(); } catch (_) {}
+    controlConnection = null;
+  }
   if (activeCall) { try { activeCall.close(); } catch (_) {} activeCall = null; }
   if (viewerPeer && !viewerPeer.destroyed) { try { viewerPeer.destroy(); } catch (_) {} viewerPeer = null; }
 }
 
 rdpCloseBtn.addEventListener('click', closeOverlay);
-
 rdpFullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    // Fullscreen JUST the video element natively, skipping all CSS/overlay layout bugs
-    if (streamFeed.srcObject) {
-      streamFeed.requestFullscreen().catch(() => {});
-    } else {
-      rdpOverlay.requestFullscreen().catch(() => {});
-    }
-  } else {
-    document.exitFullscreen();
-  }
+  if (!document.fullscreenElement) rdpOverlay.requestFullscreen().catch(() => {});
+  else document.exitFullscreen();
 });
 
-// ── Page Transition ───────────────────────────────────
 function transitionTo(targetPage) {
   const activePage = document.querySelector('.page.active');
   if (!activePage || activePage === targetPage) return;
@@ -241,17 +283,12 @@ function transitionTo(targetPage) {
   }, 500);
 }
 
-// ── Error Helpers ─────────────────────────────────────
-function showError(msg) { errorMsg.textContent = msg; errorMsg.classList.add('visible'); }
-function hideError()    { errorMsg.textContent = ''; errorMsg.classList.remove('visible'); }
+function showError(message) { errorMsg.textContent = message; errorMsg.classList.add('visible'); }
+function hideError() { errorMsg.textContent = ''; errorMsg.classList.remove('visible'); }
 
-// ── Parallax Background ───────────────────────────────
-document.addEventListener('mousemove', function (e) {
-  const shapes = document.querySelectorAll('.shape');
-  const x = e.clientX / window.innerWidth;
-  const y = e.clientY / window.innerHeight;
-  shapes.forEach((shape, i) => {
-    const factor = (i + 1) * 8;
-    shape.style.transform = `translate(${(x - 0.5) * factor}px, ${(y - 0.5) * factor}px)`;
+document.addEventListener('mousemove', (event) => {
+  document.querySelectorAll('.shape').forEach((shape, index) => {
+    const factor = (index + 1) * 8;
+    shape.style.transform = `translate(${(event.clientX / window.innerWidth - 0.5) * factor}px, ${(event.clientY / window.innerHeight - 0.5) * factor}px)`;
   });
 });

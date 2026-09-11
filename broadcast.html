@@ -330,7 +330,7 @@
       </div>
       <div class="header-text">
         <h1>TuffyBlud Broadcaster</h1>
-        <p>Stream your screen to the portal — open this tab and keep it running at home.</p>
+        <p>Share the selected monitor and relay paired remote input from the portal.</p>
       </div>
     </div>
 
@@ -387,8 +387,8 @@
     <div class="log" id="log"></div>
 
     <p class="footer-note">
-      Keep this tab open while at school. The portal will connect automatically.
-      &nbsp;|&nbsp; <a href="index.html">← Back to Portal</a>
+      Open this page through the local bridge, choose the matching monitor in the browser picker,
+      and keep it open while away. &nbsp;|&nbsp; <a href="/">Bridge status</a>
     </p>
 
   </div>
@@ -406,6 +406,7 @@
     let localStream = null;
     let activeDesktop = 1;
     let viewerCount = 0;
+    const controlSessions = new Map();
 
     // ── DOM refs ───────────────────────────────────────
     const statusDot   = document.getElementById('status-dot');
@@ -442,12 +443,92 @@
       activeDesktop = num;
       document.querySelectorAll('.desktop-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(`desk-btn-${num}`).classList.add('active');
-      log(`Switched to Desktop ${num}`);
+      log(`Desktop ${num} selected. Choose this same physical monitor in the share picker.`);
+    }
+
+    async function localControl(path, body) {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) throw new Error(`Local bridge returned ${response.status}`);
+      return response.json();
+    }
+
+    function releaseViewer(viewerId) {
+      const session = controlSessions.get(viewerId);
+      controlSessions.delete(viewerId);
+      if (session) localControl('/control/release', { session }).catch(() => {});
+    }
+
+    function rejectConnection(connection, reason) {
+      log(reason, 'warn');
+      try { connection.send({ type: 'auth-result', ok: false }); connection.close(); } catch (_) {}
+    }
+
+    function handleControlConnection(connection) {
+      let authenticated = false;
+      let inputQueue = Promise.resolve();
+
+      connection.on('data', async (message) => {
+        if (!message || typeof message !== 'object') return;
+        if (message.type === 'authenticate') {
+          if (authenticated || message.desktop !== activeDesktop || typeof message.pairingCode !== 'string') {
+            rejectConnection(connection, 'Rejected invalid pairing request.');
+            return;
+          }
+          try {
+            const result = await localControl('/control/pair', {
+              pairingCode: message.pairingCode,
+              desktop: activeDesktop
+            });
+            authenticated = true;
+            controlSessions.set(connection.peer, result.session);
+            connection.send({ type: 'auth-result', ok: true });
+            log(`Paired viewer ${connection.peer.slice(0, 8)}…`, 'ok');
+          } catch (_) {
+            rejectConnection(connection, 'Rejected a viewer with an invalid pairing code.');
+          }
+          return;
+        }
+
+        if (!authenticated) {
+          rejectConnection(connection, 'Rejected unpaired control input.');
+          return;
+        }
+        if (message.type === 'release') {
+          releaseViewer(connection.peer);
+          return;
+        }
+        if (message.type === 'release-inputs') {
+          const session = controlSessions.get(connection.peer);
+          if (session) localControl('/control/clear', { session }).catch(() => {});
+          return;
+        }
+        if (message.type === 'input' && (message.kind === 'pointer' || message.kind === 'key')) {
+          const session = controlSessions.get(connection.peer);
+          if (!session) return;
+          const { type, ...input } = message;
+          inputQueue = inputQueue
+            .then(() => localControl('/control/input', { ...input, session }))
+            .catch(error => log(`Control input rejected: ${error.message}`, 'warn'));
+        }
+      });
+
+      connection.on('close', () => releaseViewer(connection.peer));
+      connection.on('error', () => releaseViewer(connection.peer));
     }
 
     // ── Main broadcast logic ───────────────────────────
     async function startBroadcast() {
       try {
+        if (location.hostname !== '127.0.0.1' && location.hostname !== 'localhost') {
+          throw new Error('Open http://127.0.0.1:5000/broadcast after starting streamer.py.');
+        }
+        await fetch('/control/health').then(response => {
+          if (!response.ok) throw new Error('The local control bridge is unavailable.');
+        });
         // 1. Get screen capture (browser prompts user to pick monitor/window)
         log('Requesting screen capture...');
         localStream = await navigator.mediaDevices.getDisplayMedia({
@@ -505,8 +586,17 @@
           stopBtn.disabled  = false;
         });
 
+        // Authenticate a data connection before accepting that viewer's video
+        // call. The public portal never receives the local control capability.
+        peer.on('connection', handleControlConnection);
+
         // 3. Answer any incoming calls with the stream
         peer.on('call', (call) => {
+          if (!controlSessions.has(call.peer)) {
+            log(`Rejected an unpaired video request from ${call.peer.slice(0, 8)}…`, 'warn');
+            call.close();
+            return;
+          }
           log(`Viewer connected! Answering call...`, 'ok');
           
           // FIX: Force H264/VP9 to bypass the Chromium VP8 "green hue" hardware encoder bug
@@ -597,6 +687,7 @@
     }
 
     function stopBroadcast() {
+      for (const viewerId of [...controlSessions.keys()]) releaseViewer(viewerId);
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
