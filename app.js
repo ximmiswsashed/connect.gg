@@ -1,0 +1,581 @@
+/* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
+const $ = id => document.getElementById(id);
+const accountPage = $('account-page'), accountForm = $('account-form');
+const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
+const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
+const errorMsg = $('error-msg'), loginBtn = $('login-btn'), logoutBtn = $('logout-btn');
+const rdpOverlay = $('rdp-overlay'), rdpTitle = $('rdp-title');
+const rdpStatusDot = $('rdp-status-dot'), rdpConnStatus = $('rdp-conn-status');
+const streamFeed = $('stream-feed'), streamPlaceholder = $('stream-placeholder'), connMessage = $('conn-message');
+const context = streamFeed.getContext('2d', { alpha: false, desynchronized: true });
+
+let pairingCode = '', bridgeUrl = '', remoteSession = null;
+let epoch = 0, controlSocket = null, videoSocket = null, controlReady = false, hasFrame = false;
+let heartbeat = null, watchdog = null, moveTimer = null, pendingMove = null;
+let videoReconnectTimer = null, videoRetries = 0, decodeFailures = 0;
+let videoAttemptAt = 0;
+let pendingInput = [], lastSentMove = 0, lastFrameAt = 0, lastPongAt = 0;
+let sourceGeometry = null, activePointer = null, lastPoint = null;
+let decoding = false, waitingFrame = null;
+let statsAt = 0, painted = 0, receivedBytes = 0, rttMs = null;
+const pressedCodes = new Set();
+const computers = {};
+const AUTH_NAME = 'grief';
+const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
+const AUTH_VERIFIER = 'hGAyLjESZQiAs50QWGY2fTdZ7/F9fLms/eRPxwXR+F4=';
+const SAVED_COMPUTERS = 'tuffyblud.encryptedComputers.v1';
+let accountPassword = '', storageKey = null;
+let selectedPC = 1;
+let capturePaused = false, controlNoticeUntil = 0;
+let reconnectControlTimer = null, controlRetries = 0, activeMonitor = 1;
+let overlayLink = null;
+let overlayHeartbeat = null;
+
+function fromBase64(value) { return Uint8Array.from(atob(value), c => c.charCodeAt(0)); }
+function toBase64(value) { return btoa(String.fromCharCode(...new Uint8Array(value))); }
+async function deriveAccount(password) {
+  const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:fromBase64(AUTH_SALT),iterations:310000,hash:'SHA-256'},material,512));
+  const verifier = toBase64(bits.slice(0,32));
+  const key = await crypto.subtle.importKey('raw',bits.slice(32),{name:'AES-GCM'},false,['encrypt','decrypt']);
+  bits.fill(0);
+  return {verifier,key};
+}
+async function saveComputers() {
+  if(!storageKey)return;
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const plaintext=new TextEncoder().encode(JSON.stringify(computers));
+  const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv},storageKey,plaintext);
+  localStorage.setItem(SAVED_COMPUTERS,JSON.stringify({iv:toBase64(iv),data:toBase64(ciphertext)}));
+}
+async function restoreComputers(key) {
+  const saved=localStorage.getItem(SAVED_COMPUTERS);
+  if(!saved)return;
+  const record=JSON.parse(saved);
+  const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromBase64(record.iv)},key,fromBase64(record.data));
+  const restored=JSON.parse(new TextDecoder().decode(plaintext));
+  for(const id of ['1','2'])if(restored[id] && typeof restored[id].url==='string' && typeof restored[id].code==='string')computers[id]=restored[id];
+}
+accountForm.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const error=$('account-error');error.textContent='';error.classList.remove('visible');
+  const name=$('account-name').value.trim(),password=$('account-password').value;
+  try {
+    const derived=await deriveAccount(password);
+    if(name!==AUTH_NAME || derived.verifier!==AUTH_VERIFIER)throw new Error('Incorrect name or password.');
+    await restoreComputers(derived.key);
+    storageKey=derived.key;accountPassword=password;
+    $('account-password').value='';transitionTo(dashPage);
+  } catch(errorValue) {
+    error.textContent=errorValue.message==='Incorrect name or password.'?errorValue.message:'Incorrect name or password, or saved desktop data is damaged.';
+    error.classList.add('visible');accountPassword='';storageKey=null;
+  }
+});
+
+async function chooseMonitorTwo() {
+  if (!computers[1]) return configurePC(1);
+  $('overlay-choice').showModal();
+}
+
+async function acceptMonitorTwo(useOverlay) {
+  $('overlay-choice').close();
+  if (!useOverlay) { await stopMonitorOverlay(); return openMonitor(1,2); }
+  if (!computers[2]) { alert('Set Desktop 2 address and code first, then select Monitor 2 again.'); return configurePC(2); }
+  try {
+    await stopMonitorOverlay();
+    const host = await bridgeFetch('/control/pair', pairRequest(computers[1].code,2),computers[1].url);
+    overlayLink = {host:host.session,hostUrl:computers[1].url,sourceUrl:computers[2].url};
+    const source = await bridgeFetch('/control/pair', pairRequest(computers[2].code,2),computers[2].url);
+    overlayLink.source = source.session;
+    await bridgeFetch('/control/overlay',{session:host.session,action:'start',url:computers[2].url,sourceSession:source.session},computers[1].url);
+    $('stop-monitor-overlay').hidden=false;
+    overlayHeartbeat=setInterval(()=>{
+      if(overlayLink)bridgeFetch('/control/overlay',{session:overlayLink.host,action:'status'},overlayLink.hostUrl).catch(()=>{});
+    },10000);
+    await openMonitor(1,2);
+  } catch(error) { await stopMonitorOverlay(); alert(error.message); }
+}
+
+async function stopMonitorOverlay() {
+  clearInterval(overlayHeartbeat);overlayHeartbeat=null;
+  let link=overlayLink; overlayLink=null;
+  if(!link && computers[1]) {
+    try {
+      const paired=await bridgeFetch('/control/pair',pairRequest(computers[1].code,2),computers[1].url);
+      link={host:paired.session,hostUrl:computers[1].url};
+    }catch(_){return;}
+  }
+  if(!link)return;
+  await bridgeFetch('/control/overlay',{session:link.host,action:'stop'},link.hostUrl).catch(()=>{});
+  await bridgeFetch('/control/release',{session:link.host},link.hostUrl).catch(()=>{});
+  if(link.source)await bridgeFetch('/control/release',{session:link.source},link.sourceUrl).catch(()=>{});
+}
+
+function configurePC(num) {
+  selectedPC = num;
+  $('pair-pc-title').textContent = 'Connect Desktop ' + num;
+  bridgeUrlIn.value = computers[num]?.url || '';
+  pairingCodeIn.value = '';
+  transitionTo(loginPage);
+}
+
+loginForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  hideError();
+  pairingCode = pairingCodeIn.value;
+  if (pairingCode.length < 24) return showError('Enter your home PC pairing code (at least 24 characters).');
+  try {
+    const url = new URL(bridgeUrlIn.value.trim());
+    if (url.protocol !== 'https:' || url.username || url.password) throw new Error();
+    bridgeUrl = url.origin;
+  } catch (_) {
+    return showError('Paste your HTTPS Tailscale Funnel address (or another HTTPS bridge address).');
+  }
+  pairingCodeIn.value = '';
+  computers[selectedPC] = { url: bridgeUrl, code: pairingCode };
+  await saveComputers();
+  transitionTo(dashPage);
+});
+
+logoutBtn.addEventListener('click', () => {
+  stopMonitorOverlay();
+  closeOverlay();
+  pairingCode = bridgeUrl = '';
+  for (const key of Object.keys(computers)) delete computers[key];
+  accountPassword='';storageKey=null;loginForm.reset();accountForm.reset();
+  transitionTo(accountPage);
+});
+
+function handleDesktopClick(num) {
+  const panel = $('monitors-' + num);
+  panel.hidden = !panel.hidden;
+  $('desktop-' + num + '-btn').setAttribute('aria-expanded', String(!panel.hidden));
+}
+
+async function openMonitor(pc, monitor) {
+  if (!computers[pc]) return configurePC(pc);
+  closeOverlay();
+  selectedPC = pc;
+  bridgeUrl = computers[pc].url;
+  pairingCode = computers[pc].code;
+  await openDesktop(monitor);
+}
+
+function pairRequest(code,desktop) {
+  return {pairingCode:code,desktop,accountName:AUTH_NAME,accountPassword};
+}
+
+async function bridgeFetch(path, body, base = bridgeUrl) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch(base + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), signal: controller.signal, cache: 'no-store'
+    });
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('Pairing code rejected. Sign out and enter it again.');
+      throw new Error('Bridge returned ' + response.status + '. Check the selected monitor and restart the updated bridge.');
+    }
+    return await response.json();
+  } catch (error) {
+    if (error.name === 'AbortError' || error instanceof TypeError) {
+      throw new Error('Cannot reach the home bridge. Check that the bridge and Tailscale Funnel are running at home.');
+    }
+    throw error;
+  } finally { clearTimeout(timer); }
+}
+
+async function openDesktop(num) {
+  closeOverlay();
+  activeMonitor = num;
+  const current = epoch, base = bridgeUrl;
+  rdpTitle.textContent = 'Desktop ' + selectedPC + ' · Monitor ' + num;
+  rdpOverlay.classList.add('active');
+  document.body.classList.add('viewing-desktop');
+  connMessage.textContent = 'Connecting to your home PC…';
+  rdpConnStatus.textContent = 'Pairing…';
+  setOverlayState('connecting');
+  try {
+    const result = await bridgeFetch('/control/pair', pairRequest(pairingCode,num), base);
+    if (current !== epoch) {
+      bridgeFetch('/control/release', { session: result.session }, base).catch(() => {});
+      return;
+    }
+    remoteSession = result.session;
+    if (result.protocol !== 2) {
+      throw new Error('Update the home bridge dependencies and restart streamer.py. This viewer needs the 60 FPS bridge.');
+    }
+    statsAt = performance.now();
+    connectSockets(current);
+  } catch (error) { if (current === epoch) { if(controlRetries>0) recoverControl(); else failDesktop(error.message); } }
+}
+
+function makeSocket(path) {
+  return new WebSocket(bridgeUrl.replace(/^https:/, 'wss:') + path);
+}
+
+function connectSockets(current) {
+  const input = controlSocket = makeSocket('/control/socket');
+  input.onopen = () => {
+    if (current !== epoch) return input.close();
+    input.send(JSON.stringify({ type: 'auth', session: remoteSession }));
+  };
+  input.onmessage = event => {
+    if (current !== epoch) return;
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === 'error') return failDesktop(message.message);
+      if (message.type === 'input-blocked') {
+        clearHeldInput();
+        controlNoticeUntil = performance.now()+4000;
+        rdpConnStatus.textContent = 'Input blocked by Windows. Run the elevated launcher; approve UAC locally.';
+        return;
+      }
+      if (message.type === 'ready') {
+        controlReady = true;
+        lastPongAt = performance.now();
+        startVideo(current);
+        heartbeat = setInterval(() => {
+          if (input.readyState === WebSocket.OPEN) {
+            input.send(JSON.stringify({ type: 'ping', t: performance.now() }));
+          }
+        }, 2000);
+        input.send(JSON.stringify({ type: 'ping', t: performance.now() }));
+      } else if (message.type === 'pong') {
+        lastPongAt = performance.now();
+        rttMs = Math.max(0, lastPongAt - message.t);
+        if(hasFrame) controlRetries=0;
+      }
+    } catch (_) { failDesktop('The home bridge sent an invalid response. Restart it and reconnect.'); }
+  };
+  input.onerror = () => {};
+  input.onclose = () => { if (current === epoch) recoverControl(); };
+  watchdog = setInterval(() => {
+    if (current !== epoch) return;
+    const now = performance.now();
+    if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) restartVideo(current);
+    else if (hasFrame && now - lastFrameAt > 8000) restartVideo(current);
+    else if (controlReady && now - lastPongAt > 8000) recoverControl();
+    else updateStats();
+  }, 1000);
+}
+
+function startVideo(current) {
+  clearTimeout(videoReconnectTimer);
+  videoReconnectTimer = null;
+  if (current !== epoch || !controlReady) return;
+  videoAttemptAt = performance.now();
+  const socket = videoSocket = makeSocket('/control/frames');
+  socket.binaryType = 'arraybuffer';
+  socket.onopen = () => {
+    if (current !== epoch) return socket.close();
+    socket.send(JSON.stringify({ type: 'auth', session: remoteSession }));
+  };
+  socket.onmessage = event => {
+    if (current !== epoch || videoSocket !== socket) return;
+    if (typeof event.data === 'string') {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'error') restartVideo(current, socket);
+        else if (message.type === 'paused') {
+          capturePaused=true; lastFrameAt=performance.now();
+          clearHeldInput(); streamFeed.style.display='none'; streamPlaceholder.style.display='flex';
+          connMessage.textContent=message.message || 'Windows desktop unavailable; waiting to resume…';
+          rdpConnStatus.textContent='Capture paused';
+        } else if (message.type === 'idle') { lastFrameAt = performance.now(); }
+      } catch (_) { restartVideo(current, socket); }
+      return;
+    }
+    const data = event.data;
+    if (data.byteLength <= 28) return restartVideo(current, socket);
+    const header = new DataView(data);
+    const frame = {
+      sequence: header.getUint32(0, true),
+      width: header.getUint32(12, true), height: header.getUint32(16, true),
+      nativeWidth: header.getUint32(20, true), nativeHeight: header.getUint32(24, true),
+      jpeg: new Blob([data.slice(28)], { type: 'image/jpeg' }), socket, current
+    };
+    lastFrameAt = performance.now();
+    videoRetries = 0;
+    receivedBytes += data.byteLength;
+    // Decode at most one frame and retain only the newest waiting frame.
+    if (waitingFrame) ackFrame(waitingFrame);
+    waitingFrame = frame;
+    decodeLatest();
+  };
+  // onclose performs recovery; onerror is followed by onclose in browsers.
+  socket.onerror = () => {};
+  socket.onclose = () => {
+    if (videoSocket !== socket) return;
+    videoSocket = null;
+    if (current === epoch && controlReady) scheduleVideoReconnect(current);
+  };
+}
+
+function restartVideo(current, socket = videoSocket) {
+  if (current !== epoch || !controlReady) return;
+  if (socket && socket === videoSocket) {
+    videoSocket = null;
+    try { socket.close(); } catch (_) {}
+  }
+  scheduleVideoReconnect(current);
+}
+
+function scheduleVideoReconnect(current) {
+  if (current !== epoch || !controlReady || videoReconnectTimer) return;
+  const delay = Math.min(2000, 250 * (2 ** Math.min(videoRetries++, 3)));
+  lastFrameAt = performance.now();
+  rdpConnStatus.textContent = 'Recovering video…';
+  setOverlayState('connecting');
+  videoReconnectTimer = setTimeout(() => startVideo(current), delay);
+}
+
+function ackFrame(frame) {
+  if (frame.socket.readyState === WebSocket.OPEN) {
+    frame.socket.send(JSON.stringify({ type: 'ack', sequence: frame.sequence }));
+  }
+}
+
+async function decodeLatest() {
+  if (decoding) return;
+  decoding = true;
+  try {
+    while (waitingFrame) {
+      const frame = waitingFrame;
+      waitingFrame = null;
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(frame.jpeg);
+        if (frame.current !== epoch || frame.socket !== videoSocket) continue;
+        if (bitmap.width !== frame.width || bitmap.height !== frame.height) throw new Error('Invalid frame dimensions');
+        if (streamFeed.width !== bitmap.width || streamFeed.height !== bitmap.height) {
+          streamFeed.width = bitmap.width;
+          streamFeed.height = bitmap.height;
+        }
+        // Draw immediately; no video playback buffer and no extra animation-frame delay.
+        context.drawImage(bitmap, 0, 0);
+        capturePaused=false;
+        streamFeed.style.display='block';streamPlaceholder.style.display='none';
+        decodeFailures = 0;
+        setOverlayState('live');
+        sourceGeometry = [frame.nativeWidth, frame.nativeHeight];
+        painted++;
+        if (!hasFrame) {
+          hasFrame = true;
+          streamFeed.style.display = 'block';
+          streamPlaceholder.style.display = 'none';
+          setOverlayState('live');
+          rdpConnStatus.textContent = 'Live';
+          streamFeed.focus({ preventScroll: true });
+        }
+      } catch (_) {
+        decodeFailures++;
+        // A damaged frame should not take down the entire remote session.
+        if (frame.current === epoch && decodeFailures >= 3 && frame.socket === videoSocket) {
+          restartVideo(frame.current, frame.socket);
+        }
+      } finally {
+        bitmap?.close();
+        ackFrame(frame);
+      }
+    }
+  } finally { decoding = false; }
+}
+
+function updateStats() {
+  if (!hasFrame || capturePaused || performance.now()<controlNoticeUntil) return;
+  const now = performance.now(), seconds = (now - statsAt) / 1000;
+  if (seconds < 1) return;
+  const fps = Math.min(60, Math.round(painted / seconds));
+  const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
+  rdpConnStatus.textContent = streamFeed.width + '×' + streamFeed.height + ' · ' + fps +
+    '/60 FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms RTT · ' + mbps + ' Mbps';
+  painted = receivedBytes = 0;
+  statsAt = now;
+}
+
+// The same object-fit:contain geometry is used for drawing and hit testing.
+// CSS pixels already include browser zoom: multiplying by devicePixelRatio
+// here would introduce a second scaling error.
+function imagePoint(event, clamp = false) {
+  if (!hasFrame || capturePaused || !sourceGeometry) return null;
+  const rect = streamFeed.getBoundingClientRect();
+  const scale = Math.min(rect.width / streamFeed.width, rect.height / streamFeed.height);
+  if (!(scale > 0)) return null;
+  const width = streamFeed.width * scale, height = streamFeed.height * scale;
+  const x = event.clientX - rect.left - (rect.width - width) / 2;
+  const y = event.clientY - rect.top - (rect.height - height) / 2;
+  if (!clamp && (x < 0 || x > width || y < 0 || y > height)) return null;
+  return { x: Math.max(0, Math.min(1, x / width)), y: Math.max(0, Math.min(1, y / height)), geometry: sourceGeometry.slice() };
+}
+
+function sendControl(message) {
+  if (!controlReady || controlSocket?.readyState !== WebSocket.OPEN) return;
+  // Coalesce only unsent moves; never reorder movement across a click/key.
+  if (message.kind === 'pointer' && message.action === 'move' && pendingInput.at(-1)?.action === 'move') {
+    pendingInput[pendingInput.length - 1] = message;
+  } else { pendingInput.push(message); }
+  flushInput();
+}
+
+function flushInput() {
+  clearTimeout(moveTimer);
+  moveTimer = null;
+  if (!controlReady || controlSocket?.readyState !== WebSocket.OPEN) return;
+  if (pendingInput.length > 256 || controlSocket.bufferedAmount > 65536) {
+    return failDesktop('Input connection is congested. Reopen the desktop to reconnect.');
+  }
+  while (pendingInput.length && controlSocket.bufferedAmount < 4096) {
+    controlSocket.send(JSON.stringify(pendingInput.shift()));
+  }
+  if (pendingInput.length) moveTimer = setTimeout(flushInput, 4);
+}
+
+function flushPointer() {
+  if (pendingMove) {
+    const message = pendingMove;
+    pendingMove = null;
+    lastSentMove = performance.now();
+    sendControl(message);
+  }
+}
+
+function movePointer(event) {
+  const point = imagePoint(event, activePointer !== null);
+  if (!point) return;
+  lastPoint = point;
+  pendingMove = { kind: 'pointer', action: 'move', ...point };
+  if (performance.now() - lastSentMove >= 8) flushPointer();
+  else if (!pointerTimer) pointerTimer = setTimeout(() => { pointerTimer = null; flushPointer(); }, 8);
+}
+let pointerTimer = null;
+streamFeed.addEventListener('pointermove', movePointer);
+streamFeed.addEventListener('pointerenter', movePointer);
+streamFeed.addEventListener('pointerdown', event => {
+  const point = imagePoint(event);
+  if (!point || !controlReady || ![0, 1, 2].includes(event.button)) return;
+  event.preventDefault();
+  flushPointer();
+  streamFeed.focus({ preventScroll: true });
+  activePointer = event.pointerId;
+  lastPoint = point;
+  streamFeed.setPointerCapture(event.pointerId);
+  sendControl({ kind: 'pointer', action: 'down', button: event.button, ...point });
+});
+streamFeed.addEventListener('pointerup', event => {
+  if (activePointer === null) return;
+  event.preventDefault();
+  flushPointer();
+  const point = imagePoint(event, true) || lastPoint;
+  sendControl({ kind: 'pointer', action: 'up', button: event.button, ...point });
+  if (!event.buttons) {
+    activePointer = null;
+    if (streamFeed.hasPointerCapture(event.pointerId)) streamFeed.releasePointerCapture(event.pointerId);
+  }
+});
+streamFeed.addEventListener('pointercancel', clearHeldInput);
+streamFeed.addEventListener('lostpointercapture', () => { if (activePointer !== null) clearHeldInput(); });
+streamFeed.addEventListener('contextmenu', event => event.preventDefault());
+streamFeed.addEventListener('dragstart', event => event.preventDefault());
+streamFeed.addEventListener('wheel', event => {
+  const point = imagePoint(event);
+  if (!point || !controlReady) return;
+  event.preventDefault();
+  flushPointer();
+  const factor = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? streamFeed.clientHeight : 1;
+  sendControl({ kind: 'pointer', action: 'wheel', deltaX: event.deltaX * factor, deltaY: event.deltaY * factor, ...point });
+}, { passive: false });
+
+document.addEventListener('keydown', event => {
+  if (!controlReady || !hasFrame || capturePaused || document.activeElement !== streamFeed) return;
+  if (event.code === 'Escape' && event.ctrlKey && event.altKey) {
+    event.preventDefault(); clearHeldInput(); streamFeed.blur(); return;
+  }
+  if (event.code === 'F11' || (event.ctrlKey && event.shiftKey && event.code === 'KeyI')) return;
+  event.preventDefault();
+  pressedCodes.add(event.code);
+  flushPointer();
+  sendControl({ kind: 'key', action: 'down', code: event.code });
+});
+document.addEventListener('keyup', event => {
+  if (!pressedCodes.has(event.code)) return;
+  event.preventDefault();
+  pressedCodes.delete(event.code);
+  sendControl({ kind: 'key', action: 'up', code: event.code });
+});
+window.addEventListener('blur', clearHeldInput);
+streamFeed.addEventListener('blur', clearHeldInput);
+document.addEventListener('visibilitychange', () => { if (document.hidden) clearHeldInput(); });
+window.addEventListener('pagehide', closeOverlay);
+
+function clearHeldInput() {
+  pendingMove = null;
+  activePointer = null;
+  pressedCodes.clear();
+  pendingInput = [];
+  sendControl({ kind: 'clear' });
+}
+
+function stopConnections() {
+  epoch++;
+  controlReady = hasFrame = false;
+  clearInterval(heartbeat); clearInterval(watchdog);
+  clearTimeout(moveTimer); clearTimeout(pointerTimer); clearTimeout(videoReconnectTimer);
+  clearTimeout(reconnectControlTimer);reconnectControlTimer=null;capturePaused=false;
+  heartbeat = watchdog = moveTimer = pointerTimer = videoReconnectTimer = null;
+  pendingInput = [];
+  pendingMove = waitingFrame = null;
+  sourceGeometry = lastPoint = activePointer = null;
+  pressedCodes.clear();
+  controlSocket?.close(); videoSocket?.close();
+  controlSocket = videoSocket = null;
+  if (remoteSession) bridgeFetch('/control/release', { session: remoteSession }).catch(() => {});
+  remoteSession = null;
+  painted = receivedBytes = 0;
+  rttMs = null;
+  videoRetries = decodeFailures = 0;
+  videoAttemptAt = 0;
+  streamFeed.style.display = 'none';
+  streamPlaceholder.style.display = 'flex';
+}
+
+function failDesktop(message) {
+  stopConnections();
+  setOverlayState('error');
+  rdpConnStatus.textContent = 'Disconnected';
+  connMessage.textContent = message;
+}
+
+function recoverControl() {
+  if(reconnectControlTimer)return;
+  if(controlRetries++>=5)return failDesktop('Unable to reconnect. Check the home launcher and reopen this monitor.');
+  const monitor=activeMonitor, delay=Math.min(5000,500*2**Math.min(controlRetries,3));
+  stopConnections();
+  connMessage.textContent='Connection interrupted; reconnecting…';
+  rdpConnStatus.textContent='Reconnecting…';
+  reconnectControlTimer=setTimeout(()=>{reconnectControlTimer=null;openDesktop(monitor);},delay);
+}
+
+function closeOverlay() {
+  stopConnections();
+  rdpOverlay.classList.remove('active');
+  document.body.classList.remove('viewing-desktop');
+}
+
+function setOverlayState(state) {
+  rdpStatusDot.style.background = state === 'live' ? '#22c55e' : state === 'error' ? '#ef4444' : '#eab308';
+}
+
+$('rdp-close-btn').addEventListener('click', closeOverlay);
+$('rdp-fullscreen-btn').addEventListener('click', () => {
+  if (!document.fullscreenElement) rdpOverlay.requestFullscreen().catch(() => {});
+  else document.exitFullscreen();
+});
+
+function transitionTo(targetPage) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active', 'fade-out', 'fade-in'));
+  targetPage.classList.add('active');
+}
+function showError(message) { errorMsg.textContent = message; errorMsg.classList.add('visible'); }
+function hideError() { errorMsg.textContent = ''; errorMsg.classList.remove('visible'); }
