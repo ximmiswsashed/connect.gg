@@ -23,6 +23,8 @@ let sourceViewport = null;
 let decoding = false, waitingFrame = null;
 let statsAt = 0, painted = 0, receivedBytes = 0, rttMs = null;
 const pressedCodes = new Set();
+const heldMouseButtons = new Set();
+let h264PaintFrame = null, h264PaintRequest = null;
 const computers = {};
 const AUTH_NAME = 'grief';
 const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
@@ -343,8 +345,9 @@ function startPreferredVideo(current, pairingResult) {
         receivedTrack = true;
         // Remote desktop favors immediacy over a large entertainment-video
         // buffer. The browser clamps this to its safe supported minimum.
-        try { event.receiver.jitterBufferTarget = 0; } catch (_) {}
-        try { event.receiver.playoutDelayHint = 0; } catch (_) {}
+        // One frame of network variation should not starve the decoder.
+        try { event.receiver.jitterBufferTarget = 20; } catch (_) {}
+        try { event.receiver.playoutDelayHint = 0.02; } catch (_) {}
         obsFeed.srcObject = new MediaStream([event.track]);
         obsFeed.play().catch(()=>{});
       }
@@ -391,6 +394,10 @@ function startJpegFallback(current) {
 }
 
 function closeH264Decoder() {
+  if(h264PaintRequest!==null)cancelAnimationFrame(h264PaintRequest);
+  h264PaintRequest=null;
+  if(h264PaintFrame)h264PaintFrame.close();
+  h264PaintFrame=null;
   if(h264Decoder && h264Decoder.state!=='closed')h264Decoder.close();
   h264Decoder=null;
 }
@@ -419,15 +426,25 @@ function startH264Video(current) {
         closeH264Decoder();
         h264Decoder=new VideoDecoder({
           output:frame=>{
-            try {
-              if(!active())return;
+              if(!active()){frame.close();return;}
               const sample=submitted.get(frame.timestamp);
               if(sample){submitted.delete(frame.timestamp);ack(sample.sequence);videoBufferMs=performance.now()-sample.at;}
-              if(streamFeed.width!==frame.displayWidth||streamFeed.height!==frame.displayHeight){streamFeed.width=frame.displayWidth;streamFeed.height=frame.displayHeight;}
-              context.drawImage(frame,0,0,streamFeed.width,streamFeed.height);
-              painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
-              if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
-            } finally {frame.close();}
+              // Decode all references, but present only the newest frame per refresh.
+              // TCP bursts must not queue obsolete canvas work behind mouse input.
+              if(h264PaintFrame)h264PaintFrame.close();
+              h264PaintFrame=frame;
+              if(h264PaintRequest===null)h264PaintRequest=requestAnimationFrame(()=>{
+                h264PaintRequest=null;
+                const latest=h264PaintFrame;h264PaintFrame=null;
+                if(!latest)return;
+                try {
+                  if(!active())return;
+                  if(streamFeed.width!==latest.displayWidth||streamFeed.height!==latest.displayHeight){streamFeed.width=latest.displayWidth;streamFeed.height=latest.displayHeight;}
+                  context.drawImage(latest,0,0,streamFeed.width,streamFeed.height);
+                  painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
+                  if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
+                } finally {latest.close();}
+              });
           },
           error:()=>{h264Failed=true;recover();}
         });
@@ -706,7 +723,7 @@ let pointerTimer = null;
 function mouseLocked() { return document.pointerLockElement === streamFeed; }
 async function lockGameMouse() {
   if (!controlReady || !hasFrame) return;
-  if (mouseLocked()) { document.exitPointerLock(); return; }
+  if (mouseLocked()) return;
   flushPointer();
   streamFeed.focus({preventScroll:true});
   try {
@@ -744,29 +761,33 @@ streamFeed.addEventListener('pointerenter', event => {
   // Plain hover cannot be locked by any website, so pointerdown retries below.
   if (event.buttons && !mouseLocked()) lockGameMouse();
 });
-streamFeed.addEventListener('pointerdown', event => {
+function mouseButtonDown(event) {
   const point = mouseLocked() ? {} : imagePoint(event);
   if (!point || !controlReady || ![0, 1, 2].includes(event.button)) return;
   event.preventDefault();
+  if (heldMouseButtons.has(event.button)) return;
+  heldMouseButtons.add(event.button);
   flushPointer();
   streamFeed.focus({ preventScroll: true });
-  activePointer = event.pointerId;
+  activePointer = event.pointerId ?? 'mouse';
   lastPoint = point;
-  if (!mouseLocked()) streamFeed.setPointerCapture(event.pointerId);
   sendControl({ kind: 'pointer', action: 'down', button: event.button, ...point });
   if (!mouseLocked()) lockGameMouse();
-});
-streamFeed.addEventListener('pointerup', event => {
-  if (activePointer === null) return;
+}
+function mouseButtonUp(event) {
+  if (!heldMouseButtons.delete(event.button)) return;
   event.preventDefault();
   flushPointer();
   const point = mouseLocked() ? {} : imagePoint(event, true) || lastPoint;
   sendControl({ kind: 'pointer', action: 'up', button: event.button, ...point });
-  if (!event.buttons) {
-    activePointer = null;
-    if (streamFeed.hasPointerCapture(event.pointerId)) streamFeed.releasePointerCapture(event.pointerId);
-  }
-});
+  if (!heldMouseButtons.size) activePointer = null;
+}
+// Pointer events report only the first press/last release of a mouse chord.
+// Mouse events preserve every edge (RMB aim + LMB fire), including release outside.
+streamFeed.addEventListener('mousedown', mouseButtonDown);
+document.addEventListener('mouseup', mouseButtonUp);
+streamFeed.addEventListener('pointerdown', event => {if(event.pointerType!=='mouse')mouseButtonDown(event);});
+document.addEventListener('pointerup', event => {if(event.pointerType!=='mouse')mouseButtonUp(event);});
 streamFeed.addEventListener('pointercancel', clearHeldInput);
 streamFeed.addEventListener('lostpointercapture', () => { if (activePointer !== null && !mouseLocked()) clearHeldInput(); });
 streamFeed.addEventListener('contextmenu', event => event.preventDefault());
@@ -808,6 +829,7 @@ function clearHeldInput() {
   pendingMove = null;
   activePointer = null;
   pressedCodes.clear();
+  heldMouseButtons.clear();
   pendingInput = [];
   sendControl({ kind: 'clear' });
 }
@@ -826,6 +848,7 @@ function stopConnections() {
   sourceGeometry = lastPoint = activePointer = null;
   sourceViewport=null;
   pressedCodes.clear();
+  heldMouseButtons.clear();
   controlSocket?.close(); videoSocket?.close();
   mediaReader?.close();mediaReader=null;
   closeH264Decoder();h264Available=false;h264Failed=false;
