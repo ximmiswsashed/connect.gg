@@ -35,6 +35,7 @@ let reconnectControlTimer = null, controlRetries = 0, activeMonitor = 1;
 let overlayLink = null;
 let overlayHeartbeat = null;
 let overlayMonitor = 2, overlayStarting = false, inputSamples = false;
+let h264Available = false, h264Decoder = null, h264Failed = false;
 let mouseSpeed = 1;
 try { const saved = Number(localStorage.getItem('tuffyblud.mouseSpeed.v1')); if (saved >= .25 && saved <= 3) mouseSpeed = saved; } catch (_) {}
 function setMouseSpeed(value) {
@@ -321,6 +322,7 @@ function setObsViewport(nativeWidth, nativeHeight, frameWidth = 1920, frameHeigh
 }
 
 function startPreferredVideo(current, pairingResult) {
+  h264Available = pairingResult?.h264Socket === true && typeof VideoDecoder !== 'undefined' && typeof EncodedVideoChunk !== 'undefined';
   if (!pairingResult?.mediaPath || typeof MediaMTXWebRTCReader === 'undefined') {
     startVideo(current); return;
   }
@@ -378,20 +380,86 @@ function watchObsFrames(current) {
 }
 
 function startJpegFallback(current) {
-  if(current!==epoch||!controlReady||mediaMode==='jpeg')return;
+  if(current!==epoch||!controlReady||mediaMode==='jpeg'||mediaMode==='h264')return;
   clearTimeout(mediaFallbackTimer);mediaFallbackTimer=null;
-  mediaReader?.close();mediaReader=null;mediaMode='jpeg';
+  mediaReader?.close();mediaReader=null;mediaMode=null;
   obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
   document.body.classList.remove('obs-video');hasFrame=false;sourceViewport=null;
   streamFeed.style.opacity='';
-  rdpConnStatus.textContent='GPU stream unavailable · using JPEG fallback';
+  rdpConnStatus.textContent=h264Available?'Connecting H.264 over HTTPS…':'GPU stream unavailable · using JPEG fallback';
   startVideo(current);
+}
+
+function closeH264Decoder() {
+  if(h264Decoder && h264Decoder.state!=='closed')h264Decoder.close();
+  h264Decoder=null;
+}
+
+function startH264Video(current) {
+  closeH264Decoder();
+  mediaMode='h264';sourceViewport=null;
+  const socket=videoSocket=makeSocket('/control/h264');
+  socket.binaryType='arraybuffer';videoAttemptAt=performance.now();
+  let config=null,needKey=true,lastSequence=0;
+  const submitted=new Map();
+  const active=()=>current===epoch && videoSocket===socket;
+  const ack=sequence=>{if(active()&&socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ack',sequence}));};
+  const recover=()=>{if(active())restartVideo(current,socket);};
+  socket.onopen=()=>{if(!active())return socket.close();socket.send(JSON.stringify({type:'auth',session:remoteSession}));};
+  socket.onmessage=event=>{
+    if(!active())return;
+    try {
+      if(typeof event.data==='string') {
+        const message=JSON.parse(event.data);
+        if(message.type==='error')return recover();
+        if(message.type!=='ready')return;
+        if(!/^avc1\.[0-9a-f]{6}$/i.test(message.codec)||!(message.width>0&&message.height>0))throw new Error('Invalid codec');
+        config={codec:message.codec,codedWidth:message.width,codedHeight:message.height,optimizeForLatency:true};
+        sourceGeometry=[message.nativeWidth,message.nativeHeight];
+        closeH264Decoder();
+        h264Decoder=new VideoDecoder({
+          output:frame=>{
+            try {
+              if(!active())return;
+              const sample=submitted.get(frame.timestamp);
+              if(sample){submitted.delete(frame.timestamp);ack(sample.sequence);videoBufferMs=performance.now()-sample.at;}
+              if(streamFeed.width!==frame.displayWidth||streamFeed.height!==frame.displayHeight){streamFeed.width=frame.displayWidth;streamFeed.height=frame.displayHeight;}
+              context.drawImage(frame,0,0,streamFeed.width,streamFeed.height);
+              painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
+              if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
+            } finally {frame.close();}
+          },
+          error:()=>{h264Failed=true;recover();}
+        });
+        h264Decoder.configure(config);needKey=true;submitted.clear();
+        return;
+      }
+      if(!config||!h264Decoder||event.data.byteLength<=5)throw new Error('Invalid H.264 frame');
+      const header=new DataView(event.data),sequence=header.getUint32(0,true),key=header.getUint8(4)===1;
+      receivedBytes+=event.data.byteLength;
+      if((lastSequence && sequence!==lastSequence+1)||h264Decoder.decodeQueueSize>6) {
+        h264Decoder.reset();h264Decoder.configure(config);submitted.clear();needKey=true;
+        if(!key)socket.send(JSON.stringify({type:'resync'}));
+      }
+      lastSequence=sequence;
+      if(needKey&&!key){ack(sequence);return;}
+      needKey=false;
+      const timestamp=Math.round(sequence*1000000/60);
+      submitted.set(timestamp,{sequence,at:performance.now()});
+      h264Decoder.decode(new EncodedVideoChunk({type:key?'key':'delta',timestamp,duration:16667,data:new Uint8Array(event.data,5)}));
+    } catch (_) {h264Failed=true;recover();}
+  };
+  socket.onerror=()=>{};
+  socket.onclose=()=>{if(active()){videoSocket=null;closeH264Decoder();scheduleVideoReconnect(current);}};
 }
 
 function startVideo(current) {
   clearTimeout(videoReconnectTimer);
   videoReconnectTimer = null;
   if (current !== epoch || !controlReady) return;
+  if(videoRetries>=3)h264Failed=true;
+  if(h264Available&&!h264Failed)return startH264Video(current);
+  closeH264Decoder();mediaMode='jpeg';
   videoAttemptAt = performance.now();
   const socket = videoSocket = makeSocket('/control/frames');
   socket.binaryType = 'arraybuffer';
@@ -444,6 +512,7 @@ function restartVideo(current, socket = videoSocket) {
   if (current !== epoch || !controlReady) return;
   if (socket && socket === videoSocket) {
     videoSocket = null;
+    closeH264Decoder();
     try { socket.close(); } catch (_) {}
   }
   scheduleVideoReconnect(current);
@@ -541,9 +610,9 @@ function updateStats() {
   const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
   const resolution = mediaMode==='obs' ? (obsFeed.videoWidth||1920)+'×'+(obsFeed.videoHeight||1080) : streamFeed.width+'×'+streamFeed.height;
   if (mediaMode === 'obs') sampleVideoBuffer();
-  rdpConnStatus.textContent = (mediaMode==='obs'?'GPU · ':'Fallback · ') + resolution + ' · ' + fps +
+  rdpConnStatus.textContent = (mediaMode==='obs'?'GPU · ':mediaMode==='h264'?'H.264 · HTTPS · ':'JPEG fallback · ') + resolution + ' · ' + fps +
     '/60 FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
-    (mediaMode==='jpeg'?' · '+mbps+' Mbps':(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms video buffer'));
+    (mediaMode==='jpeg'?' · '+mbps+' Mbps':mediaMode==='h264'?' · '+mbps+' Mbps'+(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms decode'):(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms video buffer'));
   painted = receivedBytes = 0;
   statsAt = now;
 }
@@ -573,7 +642,11 @@ function sendControl(message) {
   } else if (message.kind === 'pointer' && message.action === 'move' && pendingInput.at(-1)?.action === 'move') {
     pendingInput[pendingInput.length - 1] = message;
   } else { pendingInput.push(message); }
-  flushInput();
+  // At high mouse polling rates, one message per sample can overwhelm the
+  // browser and Python. Batch for at most 4 ms, retaining each displacement.
+  if(message.samples && pendingInput.at(-1).samples.length<32) {
+    if(!moveTimer)moveTimer=setTimeout(flushInput,4);
+  } else flushInput();
 }
 
 function flushInput() {
@@ -755,6 +828,7 @@ function stopConnections() {
   pressedCodes.clear();
   controlSocket?.close(); videoSocket?.close();
   mediaReader?.close();mediaReader=null;
+  closeH264Decoder();h264Available=false;h264Failed=false;
   if(typeof obsFeed.cancelVideoFrameCallback==='function'&&obsFrameCallback!==null)obsFeed.cancelVideoFrameCallback(obsFrameCallback);
   else clearTimeout(obsFrameCallback);
   obsFrameCallback=null;mediaMode=null;videoBufferMs=null;lastVideoStats=null;obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
