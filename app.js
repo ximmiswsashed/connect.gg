@@ -253,17 +253,22 @@ async function openDesktop(num) {
     }
     statsAt = performance.now();
     connectSockets(current, result);
-  } catch (error) { if (current === epoch) { if(controlRetries>0) recoverControl(); else failDesktop(error.message); } }
+  } catch (error) { if (current === epoch) { if(controlRetries>0) recoverControl(error.message); else failDesktop(error.message); } }
 }
 
 function makeSocket(path) {
-  return new WebSocket(bridgeUrl.replace(/^https:/, 'wss:') + path);
+  const url = new URL(path, bridgeUrl);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return new WebSocket(url.href);
 }
 
 function connectSockets(current, pairingResult) {
   const input = controlSocket = makeSocket('/control/socket');
+  const connectStartedAt = performance.now();
+  let opened = false, authenticated = false;
   input.onopen = () => {
     if (current !== epoch) return input.close();
+    opened = true;
     input.send(JSON.stringify({ type: 'auth', session: remoteSession }));
   };
   input.onmessage = event => {
@@ -278,6 +283,8 @@ function connectSockets(current, pairingResult) {
         return;
       }
       if (message.type === 'ready') {
+        if (authenticated) return;
+        authenticated = true;
         controlReady = true;
         lastPongAt = performance.now();
         startPreferredVideo(current, pairingResult);
@@ -295,14 +302,29 @@ function connectSockets(current, pairingResult) {
     } catch (_) { failDesktop('The home bridge sent an invalid response. Restart it and reconnect.'); }
   };
   input.onerror = () => {};
-  input.onclose = () => { if (current === epoch) recoverControl(); };
+  input.onclose = event => {
+    if (current !== epoch) return;
+    const code = event?.code ?? 'unknown';
+    if (!authenticated) {
+      failDesktop(opened
+        ? `The control WebSocket opened but closed before authentication (code ${code}). Pairing succeeded. Check the launcher's [Control] error, then reopen this monitor.`
+        : `Pairing succeeded, but the control WebSocket could not open (code ${code}). Check the tunnel or network's WebSocket support. Bridge: ${bridgeUrl}. Your saved settings are unchanged.`);
+      return;
+    }
+    recoverControl(`Control WebSocket closed (code ${code}).`);
+  };
   watchdog = setInterval(() => {
     if (current !== epoch) return;
     const now = performance.now();
+    if (!authenticated && now - connectStartedAt > 12000) {
+      return failDesktop(opened
+        ? 'The control WebSocket opened, but the bridge did not authenticate it within 12 seconds. Check the launcher window.'
+        : 'Pairing succeeded, but opening the control WebSocket timed out. Check the tunnel or network. Your saved settings are unchanged.');
+    }
     if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) startJpegFallback(current);
     else if (hasFrame && now - lastFrameAt > 8000 && mediaMode === 'obs') startJpegFallback(current);
     else if (hasFrame && now - lastFrameAt > 8000) restartVideo(current);
-    else if (controlReady && now - lastPongAt > 8000) recoverControl();
+    else if (controlReady && now - lastPongAt > 8000) recoverControl('The bridge stopped answering control heartbeats for 8 seconds.');
     else updateStats();
   }, 1000);
 }
@@ -874,12 +896,12 @@ function failDesktop(message) {
   connMessage.textContent = message;
 }
 
-function recoverControl() {
+function recoverControl(reason = 'The control connection was interrupted.') {
   if(reconnectControlTimer)return;
-  if(controlRetries++>=5)return failDesktop('Unable to reconnect. Check the home launcher and reopen this monitor.');
+  if(controlRetries++>=5)return failDesktop('Unable to reconnect. ' + reason + ' Check the home launcher and reopen this monitor.');
   const monitor=activeMonitor, delay=Math.min(5000,500*2**Math.min(controlRetries,3));
   stopConnections();
-  connMessage.textContent='Connection interrupted; reconnecting…';
+  connMessage.textContent=reason + ' Reconnecting…';
   rdpConnStatus.textContent='Reconnecting…';
   reconnectControlTimer=setTimeout(()=>{reconnectControlTimer=null;openDesktop(monitor);},delay);
 }
