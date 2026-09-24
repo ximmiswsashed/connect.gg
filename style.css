@@ -1,4 +1,4 @@
-/* TuffyBlud · monochrome desktop portal */
+/* connect.gg · monochrome desktop and party space */
 :root{color-scheme:dark;--surface:#080808;--line:#242424;--muted:#a3a3a3;--ink:#fff;--ease:cubic-bezier(.22,1,.36,1);font-family:Inter,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:#000;color:#fff}
@@ -137,3 +137,16 @@ body.viewing-desktop .rdp-overlay{animation:none;transition:none}
 @media(display-mode:fullscreen){body.viewing-desktop:not(.mouse-locked) .rdp-header{display:flex}}
 @media(max-width:480px){.mouse-speed-control input{width:70px}.rdp-brand{font-size:10px}.mouse-speed-control{gap:4px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.dash-header{position:sticky;top:0;z-index:40}.dash-header-inner{max-width:none;padding:20px 32px;gap:16px}.dash-brand{margin-right:auto}.signed-in-name{font-size:12px;color:#aaa}
+.side-menu{position:fixed;z-index:30;left:0;top:78px;bottom:0;width:220px;background:#050505;border-right:1px solid #222;padding:32px 16px}
+.side-menu p{font-size:10px;letter-spacing:.18em;color:#777;margin:0 14px 20px}.side-menu button{display:block;width:100%;padding:16px;text-align:left;background:none;border:0;color:#aaa;border-radius:14px;margin:6px 0;transition:background .2s,color .2s}
+.side-menu button:hover,.side-menu button[aria-current=page]{background:#171717;color:#fff}.side-menu span{display:block;font-size:9px;letter-spacing:.15em;color:#777;margin-top:8px}
+#dashboard-page .dash-main{max-width:1180px;margin:0 auto 0 220px;width:calc(100% - 220px);padding:52px 42px}.dash-username{font-size:clamp(28px,4vw,44px)}.desktop-card{min-height:220px;padding:26px}.card-icon{margin-bottom:20px;width:58px;height:48px}.card-status{margin-top:16px}.desktop-card:hover{transform:translateY(-3px)}
+.game-title{font:500 clamp(44px,6vw,76px)/1.02 'Space Grotesk',sans-serif;letter-spacing:-.055em;margin-top:16px}.game-entry,.lobby-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.game-tile{border:1px solid #292929;border-radius:24px;padding:28px;background:linear-gradient(135deg,#111,#050505);animation:arrive .35s var(--ease)}.game-tile h3{font-size:24px;letter-spacing:-.7px;font-weight:500}.game-tile p{color:#aaa;font-size:14px;line-height:1.7;margin-top:14px}.game-tile label{display:block;margin:24px 0 10px;color:#aaa;font-size:12px}
+.game-tile input,.game-tile select{width:100%;padding:14px;border-radius:12px;border:1px solid #444;background:#080808;color:#fff;font:inherit}.game-tile select:disabled{opacity:.65}.game-tile input{text-transform:uppercase;letter-spacing:.25em}.game-message{min-height:24px;font-size:14px;margin-bottom:12px;color:#ddd}
+.lobby-header{display:flex;justify-content:space-between;align-items:center}.lobby-header h3{font-size:36px;letter-spacing:.15em;margin:10px 0}.lobby-grid{margin-top:26px}#game-players{list-style:none;margin:16px 0}#game-players li{padding:10px 0;border-bottom:1px solid #242424;font-size:14px}
+.role-tile{display:flex;align-items:center;justify-content:center;text-align:center;min-height:310px}#game-countdown{font-size:110px;font-weight:600;font-variant-numeric:tabular-nums}#game-player-name{margin-top:20px}#game-secret{font-size:24px;font-weight:600;margin-top:28px;color:#fff;overflow-wrap:anywhere}#game-secret.imposter{color:#ff6868}#game-card{width:100%}#game-end{margin-top:12px}
+#account-toggle{margin-top:18px;background:transparent;border:0;color:#aaa;font-size:12px}#menu-toggle{display:none}.dash-footer{margin-left:220px}.nav-open .side-menu{display:block}
+@media(max-width:850px){.side-menu{display:none;top:73px;width:220px;box-shadow:40px 0 100px #000c}#menu-toggle{display:block}#dashboard-page .dash-main{margin:0;width:100%;padding:38px 22px}.dash-footer{margin:0}.dash-header-inner{padding:18px 20px;gap:10px}.signed-in-name{display:none}}
+@media(max-width:600px){.game-entry,.lobby-grid{grid-template-columns:1fr}.game-tile{padding:24px}.desktop-card{min-height:190px}.role-tile{min-height:240px}}

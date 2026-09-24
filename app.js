@@ -1,6 +1,6 @@
 /* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'Viewer v8 · native HTTPS + remote cursor';
+if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v9';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -29,7 +29,6 @@ let h264PaintFrame = null, h264PaintRequest = null;
 const computers = {};
 const AUTH_NAME = 'grief';
 const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
-const AUTH_VERIFIER = 'hGAyLjESZQiAs50QWGY2fTdZ7/F9fLms/eRPxwXR+F4=';
 const SAVED_COMPUTERS = 'tuffyblud.encryptedComputers.v1';
 let accountPassword = '', storageKey = null;
 let selectedPC = 1;
@@ -82,16 +81,19 @@ accountForm.addEventListener('submit',async event=>{
   event.preventDefault();
   const error=$('account-error');error.textContent='';error.classList.remove('visible');
   const name=$('account-name').value.trim(),password=$('account-password').value;
+  const submit=$('account-submit');submit.disabled=true;
   try {
-    const derived=await deriveAccount(password);
-    if(name!==AUTH_NAME || derived.verifier!==AUTH_VERIFIER)throw new Error('Incorrect name or password.');
-    await restoreComputers(derived.key);
-    storageKey=derived.key;accountPassword=password;
+    const user=await window.ConnectPortal.login(name,password);
+    if(user.admin){
+      const derived=await deriveAccount(password);
+      try { await restoreComputers(derived.key); } catch (_) { /* Keep login usable if old local settings were damaged. */ }
+      storageKey=derived.key;accountPassword=password;
+    } else {storageKey=null;accountPassword='';}
     $('account-password').value='';transitionTo(dashPage);
   } catch(errorValue) {
-    error.textContent=errorValue.message==='Incorrect name or password.'?errorValue.message:'Incorrect name or password, or saved desktop data is damaged.';
+    error.textContent=errorValue.message+(errorValue.retryAfter?' Try again in '+Math.ceil(errorValue.retryAfter/60)+' minute(s).':'');
     error.classList.add('visible');accountPassword='';storageKey=null;
-  }
+  } finally {submit.disabled=false;}
 });
 
 async function chooseMonitorTwo(monitor = 2) {
@@ -182,6 +184,7 @@ loginForm.addEventListener('submit', async event => {
 });
 
 logoutBtn.addEventListener('click', () => {
+  window.ConnectPortal?.logout();
   stopMonitorOverlay();
   closeOverlay();
   pairingCode = bridgeUrl = '';
@@ -384,7 +387,7 @@ function startPreferredVideo(current, pairingResult) {
       if (!nativeVideo) setObsViewport(...sourceGeometry, streamFeed.width, streamFeed.height);
       streamFeed.style.display='block'; obsFeed.style.display='block';
       streamPlaceholder.style.display='none'; document.body.classList.add('obs-video');
-      setOverlayState('live'); rdpConnStatus.textContent='Live · Direct GPU capture';
+      setOverlayState('live'); rdpConnStatus.textContent='Connected';
       if (typeof obsFeed.cancelVideoFrameCallback === 'function' && obsFrameCallback !== null) obsFeed.cancelVideoFrameCallback(obsFrameCallback);
       streamFeed.focus({preventScroll:true}); watchObsFrames(current);
     };
@@ -413,7 +416,7 @@ function startJpegFallback(current) {
   obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
   document.body.classList.remove('obs-video');hasFrame=false;sourceViewport=null;
   streamFeed.style.opacity='';
-  rdpConnStatus.textContent=h264Available?'Connecting H.264 over HTTPS…':'GPU stream unavailable · using JPEG fallback';
+  rdpConnStatus.textContent=h264Available?'Connecting in HD…':'Switching to a compatible stream…';
   startVideo(current);
 }
 
@@ -656,7 +659,7 @@ function updateStats() {
   const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
   const resolution = mediaMode==='obs' ? (obsFeed.videoWidth||1920)+'×'+(obsFeed.videoHeight||1080) : streamFeed.width+'×'+streamFeed.height;
   if (mediaMode === 'obs') sampleVideoBuffer();
-  rdpConnStatus.textContent = (mediaMode==='obs'?'GPU · ':mediaMode==='h264'?'H.264 · HTTPS · ':'JPEG fallback · ') + resolution + ' · ' + fps +
+  rdpConnStatus.textContent = (mediaMode==='obs'?'Direct · ':mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
     '/60 FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
     (mediaMode==='jpeg'?' · '+mbps+' Mbps':mediaMode==='h264'?' · '+mbps+' Mbps'+(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms decode'):(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms video buffer'));
   painted = receivedBytes = 0;
@@ -900,7 +903,10 @@ function failDesktop(message) {
   stopConnections();
   setOverlayState('error');
   rdpConnStatus.textContent = 'Disconnected';
-  connMessage.textContent = message;
+  connMessage.textContent = /pairing code|password|Account/.test(message)
+    ? 'Check your sign-in details and this computer’s connection settings.'
+    : 'Couldn’t connect. Check that your computer is online, then try again.';
+  connMessage.title = message;
 }
 
 function recoverControl(reason = 'The control connection was interrupted.') {
@@ -908,7 +914,8 @@ function recoverControl(reason = 'The control connection was interrupted.') {
   if(controlRetries++>=5)return failDesktop('Unable to reconnect. ' + reason + ' Check the home launcher and reopen this monitor.');
   const monitor=activeMonitor, delay=Math.min(5000,500*2**Math.min(controlRetries,3));
   stopConnections();
-  connMessage.textContent=reason + ' Reconnecting…';
+  connMessage.textContent='Reconnecting to your computer…';
+  connMessage.title=reason;
   rdpConnStatus.textContent='Reconnecting…';
   reconnectControlTimer=setTimeout(()=>{reconnectControlTimer=null;openDesktop(monitor);},delay);
 }
