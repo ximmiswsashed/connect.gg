@@ -1,6 +1,6 @@
 /* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v9';
+if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v10';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');

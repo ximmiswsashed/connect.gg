@@ -18,12 +18,29 @@ window.ConnectPortal = (() => {
   }
   function secretOff(){revealed=false;el('game-secret').textContent='';el('game-secret').hidden=true;el('game-reveal').textContent='Reveal';el('game-secret').classList.remove('imposter');}
   function message(text){el('game-message').textContent=text;}
+  let chatKey='';
+  function renderChat(next){
+    const messages=next.messages||[],key=next.code+':'+messages.map(m=>m.id).join(',');
+    if(key===chatKey)return;
+    const log=el('game-chat-log'),atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60,newRoom=!chatKey.startsWith(next.code+':');
+    chatKey=key;
+    log.replaceChildren(...messages.map(m=>{
+      const row=document.createElement('p'),name=document.createElement('strong'),text=document.createElement('span');
+      name.textContent=m.name;name.style.color=m.color;text.textContent=m.text;row.append(name,text);return row;
+    }));
+    el('game-chat-empty').hidden=messages.length>0;
+    if(atBottom||newRoom)log.scrollTop=log.scrollHeight;
+  }
   function render(next) {
+    if(!room||room.code!==next.code){el('game-chat-input').value='';el('game-chat-error').textContent='';chatKey='';}
     if(!room||room.round!==next.round||room.phase!==next.phase)secretOff();
     room=next;el('game-entry').hidden=true;el('game-room').hidden=false;
     el('lobby-code').textContent=room.code;el('game-player-name').textContent=user.name;
-    el('game-players').replaceChildren(...room.players.map(player=>{const item=document.createElement('li');item.textContent=player.name+(player.host?' · Host':'');return item;}));
-    el('game-topic').value=room.topic;el('game-topic').disabled=!room.host||room.phase!=='waiting';
+    el('game-players').replaceChildren(...room.players.map(player=>{const item=document.createElement('li');item.textContent=player.name+(player.host?' · Host':'');item.style.color=player.color;return item;}));
+    el('game-player-name').style.color=room.players.find(p=>p.name===user.name)?.color||'';
+    renderChat(room);
+    el('game-topic').hidden=!room.host;document.querySelector('label[for="game-topic"]').hidden=!room.host;
+    el('game-topic').value=room.host?room.topic:'';el('game-topic').disabled=!room.host||room.phase!=='waiting';
     el('game-start').hidden=!room.host||room.phase!=='waiting';el('game-start').disabled=room.players.length<3;
     el('game-end').hidden=!room.host||room.phase==='waiting';
     el('game-countdown').hidden=room.phase!=='countdown';el('game-countdown').textContent=room.countdown||'';
@@ -71,6 +88,15 @@ window.ConnectPortal = (() => {
   el('menu-toggle').addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');el('menu-toggle').setAttribute('aria-expanded',String(open));});
   el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));
   el('game-create').addEventListener('click',()=>action('create'));
+  el('game-chat-form').addEventListener('submit',async event=>{
+    event.preventDefault();const input=el('game-chat-input'),button=el('game-chat-send'),text=input.value.trim();
+    if(!text||button.disabled)return;
+    const current=generation,code=room?.code;button.disabled=true;el('game-chat-error').textContent='';
+    try {const next=await api('/api/lobby/chat',{text});if(current!==generation||room?.code!==code)return;
+      render(next);if(input.value.trim()===text)input.value='';el('game-chat-log').scrollTop=el('game-chat-log').scrollHeight;
+    }catch(error){if(current===generation)el('game-chat-error').textContent=error.message;}
+    finally{button.disabled=false;}
+  });
   el('game-join-form').addEventListener('submit',event=>{event.preventDefault();action('join',{code:el('game-code').value});});
   el('game-topic').addEventListener('change',()=>action('topic',{topic:el('game-topic').value}));
   el('game-start').addEventListener('click',()=>action('start'));el('game-end').addEventListener('click',()=>action('end'));el('game-leave').addEventListener('click',()=>action('leave'));

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260924-connect-v9">
+  <link rel="stylesheet" href="style.css?v=20260924-connect-v10">
 </head>
 <body>
 
@@ -252,6 +252,13 @@
           <p id="game-instructions" class="dash-subtitle"></p>
           <div class="lobby-grid"><section class="game-tile"><h3>Who's in?</h3><ul id="game-players"></ul><label for="game-topic">Topic</label><select id="game-topic"></select><button id="game-start" class="btn-login">Start round</button><button id="game-end" class="pc-action" hidden>End round</button></section>
           <section class="game-tile role-tile"><div id="game-countdown" role="status" aria-live="assertive" hidden></div><div id="game-card" hidden><p class="dash-greeting">JUST FOR YOU</p><h3 id="game-player-name"></h3><button id="game-reveal" class="btn-login">Reveal</button><p id="game-secret" hidden aria-live="polite"></p></div></section></div>
+          <section class="game-tile lobby-chat" aria-labelledby="game-chat-title">
+            <h3 id="game-chat-title">Lobby chat</h3>
+            <p id="game-chat-empty" class="dash-subtitle">Say hello or share a clue. Keep your secret word to yourself.</p>
+            <div id="game-chat-log" role="log" aria-label="Lobby messages" aria-live="polite" aria-relevant="additions" tabindex="0"></div>
+            <form id="game-chat-form"><label class="chat-label" for="game-chat-input">Message your lobby</label><div class="chat-compose"><input id="game-chat-input" maxlength="500" autocomplete="off" placeholder="Message your lobby…" required><button id="game-chat-send" class="btn-login" type="submit">Send</button></div></form>
+            <p id="game-chat-error" role="status"></p>
+          </section>
         </div>
       </section>
     </main>
@@ -300,9 +307,9 @@
   </div>
 
   <script src="reader.js?v=20260914-quality-input-v3"></script>
-  <script src="connect-config.js?v=20260924-connect-v9"></script>
-  <script src="portal-client.js?v=20260924-connect-v9"></script>
-  <script src="app.js?v=20260924-connect-v9"></script>
+  <script src="connect-config.js?v=20260924-connect-v10"></script>
+  <script src="portal-client.js?v=20260924-connect-v10"></script>
+  <script src="app.js?v=20260924-connect-v10"></script>
   <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
     <h2>Overlay?</h2>
     <p id="overlay-target">Desktop 1 · Monitor 2</p>
