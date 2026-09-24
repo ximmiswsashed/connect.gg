@@ -1,5 +1,6 @@
 /* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
+if ($('viewer-build')) $('viewer-build').textContent = 'Viewer v8 · native HTTPS + remote cursor';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -387,7 +388,8 @@ function startPreferredVideo(current, pairingResult) {
       if (typeof obsFeed.cancelVideoFrameCallback === 'function' && obsFrameCallback !== null) obsFeed.cancelVideoFrameCallback(obsFrameCallback);
       streamFeed.focus({preventScroll:true}); watchObsFrames(current);
     };
-    mediaFallbackTimer=setTimeout(()=>{if(current===epoch&&!hasFrame)startJpegFallback(current);},15000);
+    // On restrictive networks, move to the same native H.264 via HTTPS promptly.
+    mediaFallbackTimer=setTimeout(()=>{if(current===epoch&&!hasFrame)startJpegFallback(current);},h264Available?5000:15000);
   } catch (_) { startJpegFallback(current); }
 }
 
@@ -476,7 +478,12 @@ function startH264Video(current) {
       if(!config||!h264Decoder||event.data.byteLength<=5)throw new Error('Invalid H.264 frame');
       const header=new DataView(event.data),sequence=header.getUint32(0,true),key=header.getUint8(4)===1;
       receivedBytes+=event.data.byteLength;
-      if((lastSequence && sequence!==lastSequence+1)||h264Decoder.decodeQueueSize>6) {
+      const oldest = submitted.values().next().value;
+      // A short delivery burst is not a stalled decoder. Resetting merely at
+      // seven queued chunks turns transient jitter into a wait for the next IDR.
+      const decoderBehind = h264Decoder.decodeQueueSize > 18 ||
+        (h264Decoder.decodeQueueSize > 6 && oldest && performance.now()-oldest.at > 120);
+      if((lastSequence && sequence!==lastSequence+1)||decoderBehind) {
         h264Decoder.reset();h264Decoder.configure(config);submitted.clear();needKey=true;
         if(!key)socket.send(JSON.stringify({type:'resync'}));
       }
