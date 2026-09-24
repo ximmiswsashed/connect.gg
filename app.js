@@ -1,6 +1,6 @@
 /* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v10';
+if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v11';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -240,6 +240,9 @@ async function openDesktop(num) {
   const current = epoch, base = bridgeUrl;
   rdpTitle.textContent = 'Desktop ' + selectedPC + ' · Monitor ' + num;
   rdpOverlay.classList.add('active');
+  rdpOverlay.classList.remove('info-open');
+  $('rdp-info-toggle').setAttribute('aria-expanded','false');
+  $('rdp-info-toggle').textContent='Controls ▾';
   document.body.classList.add('viewing-desktop');
   connMessage.textContent = 'Connecting to your home PC…';
   rdpConnStatus.textContent = 'Pairing…';

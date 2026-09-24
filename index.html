@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260924-connect-v10">
+  <link rel="stylesheet" href="style.css?v=20260924-connect-v11">
+  <link rel="stylesheet" href="game-layout.css?v=20260924-connect-v11">
 </head>
 <body>
 
@@ -256,9 +257,11 @@
             <h3 id="game-chat-title">Lobby chat</h3>
             <p id="game-chat-empty" class="dash-subtitle">Say hello or share a clue. Keep your secret word to yourself.</p>
             <div id="game-chat-log" role="log" aria-label="Lobby messages" aria-live="polite" aria-relevant="additions" tabindex="0"></div>
-            <form id="game-chat-form"><label class="chat-label" for="game-chat-input">Message your lobby</label><div class="chat-compose"><input id="game-chat-input" maxlength="500" autocomplete="off" placeholder="Message your lobby…" required><button id="game-chat-send" class="btn-login" type="submit">Send</button></div></form>
+            <div class="typing-space"><span id="game-typing" hidden><span id="typing-names"></span><span class="typing-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span></div>
+            <form id="game-chat-form"><div class="chat-compose"><input id="game-chat-input" aria-label="Chat message" maxlength="500" autocomplete="off" placeholder="Say something…" required><button id="game-chat-send" class="btn-login" type="submit">Send</button></div></form>
             <p id="game-chat-error" role="status"></p>
           </section>
+          <section class="vote-panel"><button id="game-vote-ready" class="pc-action" hidden>Ready to vote</button><div id="game-voting" hidden><label for="game-vote-choice">Who is the imposter?</label><select id="game-vote-choice"></select><button id="game-vote-lock" class="pc-action">Lock in vote</button><p id="game-vote-status"></p></div><p id="game-result" role="status" hidden></p></section>
         </div>
       </section>
     </main>
@@ -270,7 +273,8 @@
 
   <!-- ========== REMOTE DESKTOP OVERLAY ========== -->
   <div id="rdp-overlay" class="rdp-overlay">
-    <div class="rdp-header">
+    <button id="rdp-info-toggle" class="rdp-btn" aria-expanded="false" aria-controls="rdp-info">Controls ▾</button>
+    <div class="rdp-header" id="rdp-info">
       <div class="rdp-brand">
         <span class="status-dot rdp-status" id="rdp-status-dot"></span>
         <span id="rdp-title">Connecting to Desktop...</span>
@@ -307,9 +311,9 @@
   </div>
 
   <script src="reader.js?v=20260914-quality-input-v3"></script>
-  <script src="connect-config.js?v=20260924-connect-v10"></script>
-  <script src="portal-client.js?v=20260924-connect-v10"></script>
-  <script src="app.js?v=20260924-connect-v10"></script>
+  <script src="connect-config.js?v=20260924-connect-v11"></script>
+  <script src="portal-client.js?v=20260924-connect-v11"></script>
+  <script src="app.js?v=20260924-connect-v11"></script>
   <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
     <h2>Overlay?</h2>
     <p id="overlay-target">Desktop 1 · Monitor 2</p>

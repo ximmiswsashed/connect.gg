@@ -18,15 +18,23 @@ window.ConnectPortal = (() => {
   }
   function secretOff(){revealed=false;el('game-secret').textContent='';el('game-secret').hidden=true;el('game-reveal').textContent='Reveal';el('game-secret').classList.remove('imposter');}
   function message(text){el('game-message').textContent=text;}
-  let chatKey='';
+  let chatKey='',lastTyped=0;
+  function presence(){
+    const log=el('game-chat-log'),visible=!document.hidden&&!el('game-area').hidden&&log.scrollHeight-log.scrollTop-log.clientHeight<24;
+    return {read:visible?(room?.messages?.at(-1)?.id||0):0,typing:visible&&!!el('game-chat-input').value.trim()&&Date.now()-lastTyped<2000};
+  }
   function renderChat(next){
-    const messages=next.messages||[],key=next.code+':'+messages.map(m=>m.id).join(',');
+    el('typing-names').textContent=(next.typing||[]).join(', ')+((next.typing||[]).length>1?' are typing':' is typing');
+    el('game-typing').hidden=!(next.typing||[]).length;
+    const messages=next.messages||[],key=next.code+':'+messages.map(m=>m.id).join(',')+JSON.stringify(next.readers||[]);
     if(key===chatKey)return;
     const log=el('game-chat-log'),atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60,newRoom=!chatKey.startsWith(next.code+':');
     chatKey=key;
     log.replaceChildren(...messages.map(m=>{
       const row=document.createElement('p'),name=document.createElement('strong'),text=document.createElement('span');
-      name.textContent=m.name;name.style.color=m.color;text.textContent=m.text;row.append(name,text);return row;
+      name.textContent=m.name;name.style.color=m.color;text.textContent=m.text;row.append(name,text);
+      const readers=(next.readers||[]).filter(p=>p.read>=m.id&&p.name!==m.name).map(p=>p.name);
+      if(readers.length){const seen=document.createElement('small');seen.textContent='Seen by '+readers.join(', ');row.append(seen);}return row;
     }));
     el('game-chat-empty').hidden=messages.length>0;
     if(atBottom||newRoom)log.scrollTop=log.scrollHeight;
@@ -45,12 +53,24 @@ window.ConnectPortal = (() => {
     el('game-end').hidden=!room.host||room.phase==='waiting';
     el('game-countdown').hidden=room.phase!=='countdown';el('game-countdown').textContent=room.countdown||'';
     el('game-card').hidden=room.phase!=='playing';
-    el('game-instructions').textContent=room.phase==='waiting'?'Invite at least 3 players. Share the code to join.':room.phase==='countdown'?'Get ready…':'Take turns giving a clue. Who is the imposter?';
+    el('game-vote-ready').hidden=room.phase!=='playing';el('game-vote-ready').disabled=room.voteReady;
+    el('game-vote-ready').textContent=room.voteReady?'Waiting for players…':'Ready to vote';
+    el('game-voting').hidden=room.phase!=='voting';
+    const select=el('game-vote-choice'),selection=select.value,choices=JSON.stringify(room.players.map(p=>[p.id,p.name]));
+    if(select._choices!==choices){select._choices=choices;
+      select.replaceChildren(...room.players.map(p=>{const o=document.createElement('option');o.value=String(p.id);o.textContent=p.name;return o;}));
+      if(room.players.some(p=>String(p.id)===selection))select.value=selection;
+    }
+    select.disabled=!!room.voteLocked;el('game-vote-lock').disabled=!!room.voteLocked;
+    el('game-vote-status').textContent=room.voteLocked?'Vote locked · '+room.lockedCount+'/'+room.players.length+' ready':'Choose the imposter. Your vote cannot be changed.';
+    el('game-result').hidden=room.phase!=='result';
+    el('game-result').textContent=room.phase==='result'?(room.result.winner==='players'?'Players win! ':'Imposter wins! ')+room.result.imposter+' was the imposter.'+(room.result.tie?' The vote was tied.':''):'';
+    el('game-instructions').textContent=room.phase==='waiting'?'Invite at least 3 players. Share the code to join.':room.phase==='countdown'?'Get ready…':room.phase==='voting'?'Everyone locks in one vote. A majority must identify the imposter.':room.phase==='result'?'Round complete. The host can end this round to play again.':'Take turns giving a clue. Who is the imposter?';
   }
   async function refresh(){
     if(pollBusy||!room||!token)return;
     pollBusy=true;const current=generation;
-    try {const next=await api('/api/lobby/state');if(current===generation)render(next);}
+    try {const next=await api('/api/lobby/state',presence());if(current===generation)render(next);}
     catch(error){if(current!==generation)return;secretOff();message(error.message);if(error.status===404){room=null;el('game-entry').hidden=false;el('game-room').hidden=true;}if(error.status===401){logout();document.getElementById('logout-btn').click();}}
     finally{pollBusy=false;}
   }
@@ -64,6 +84,7 @@ window.ConnectPortal = (() => {
   function view(which){
     if(which==='computers'&&!user?.admin)return;
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';
+    document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
@@ -88,6 +109,10 @@ window.ConnectPortal = (() => {
   el('menu-toggle').addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');el('menu-toggle').setAttribute('aria-expanded',String(open));});
   el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));
   el('game-create').addEventListener('click',()=>action('create'));
+  el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
+  el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
+  el('game-vote-lock').addEventListener('click',()=>action('vote',{round:room?.round,player:Number(el('game-vote-choice').value)}));
+  el('rdp-info-toggle').addEventListener('click',()=>{const open=el('rdp-overlay').classList.toggle('info-open');el('rdp-info-toggle').setAttribute('aria-expanded',String(open));el('rdp-info-toggle').textContent=open?'Controls ▴':'Controls ▾';});
   el('game-chat-form').addEventListener('submit',async event=>{
     event.preventDefault();const input=el('game-chat-input'),button=el('game-chat-send'),text=input.value.trim();
     if(!text||button.disabled)return;
