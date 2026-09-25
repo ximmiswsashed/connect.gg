@@ -15,15 +15,26 @@ body.playing-imposter .dash-footer{display:none}
 #game-room .btn-login{padding:10px;margin-top:10px}#game-room select{padding:8px}
 #game-room .role-tile{min-height:0}#game-player-name{margin-top:8px}#game-secret{font-size:18px;margin-top:12px}
 #game-room .lobby-chat{grid-column:2;grid-row:3/5;margin:0;display:flex;flex-direction:column;min-height:0}
-#game-chat-log{flex:1;min-height:0;max-height:none}#game-chat-log p{padding:7px 0;margin:0}#game-chat-log small{display:block;font-size:10px;color:#999}
+#game-chat-log{flex:1;min-height:0;max-height:none}#game-chat-log p{padding:7px 0;margin:0;border:0}#game-chat-log small{display:block;font-size:10px;color:#999}
 #game-chat-empty{font-size:12px;margin:8px 0}#game-chat-error:empty{display:none}
 .typing-space{height:22px;flex-shrink:0;font-size:11px;color:#aaa;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .typing-dots i{font-style:normal;display:inline-block;animation:typing-dot 1s infinite}.typing-dots i:nth-child(2){animation-delay:.15s}.typing-dots i:nth-child(3){animation-delay:.3s}
 @keyframes typing-dot{50%{transform:translateY(-3px);opacity:.3}}
 @media(prefers-reduced-motion:reduce){.typing-dots i{animation:none}}
 .vote-panel{grid-column:1;grid-row:4;font-size:13px}.vote-panel select{background:#111;color:white;border:1px solid #555;border-radius:8px;margin:4px;max-width:180px}.vote-panel p{margin:4px 0}
-#rdp-info-toggle{position:absolute;top:8px;left:8px;z-index:5;width:auto;padding:8px 12px;background:#080808d9;font-size:12px}
-body #rdp-overlay:not(.info-open) .rdp-header{display:none!important}
-body #rdp-overlay.info-open .rdp-header{display:flex!important;position:absolute;left:0;right:0;top:44px;z-index:4;flex-wrap:wrap;background:#000e}
+#rdp-info-toggle{position:absolute;top:0;left:0;z-index:5;width:34px;height:22px;padding:0;background:#080808ed;font-size:19px;border-radius:0 0 9px 0;transition:top .2s ease}
+body #rdp-overlay .rdp-header{display:flex!important;position:absolute;left:0;right:0;top:0;z-index:4;flex-wrap:wrap;background:#080808f5;transform:translateY(-100%);visibility:hidden;transition:transform .2s ease,visibility .2s}
+body #rdp-overlay.info-open .rdp-header{transform:translateY(0);visibility:visible}
+body #rdp-overlay.info-open #rdp-info-toggle{top:var(--controls-height,64px)}
+#game-secret{position:relative;padding:24px 10px;border:1px solid #ffffff30;border-radius:16px;background:radial-gradient(ellipse at top,#ffffff22,transparent 80%),#090909;box-shadow:0 14px 35px #0006;overflow-wrap:anywhere}
+#game-secret.imposter{border-color:#ff686855;background:radial-gradient(ellipse at top,#ff303022,transparent 80%),#090909}
+.login-card{border-radius:28px;padding:38px 34px 26px;background:radial-gradient(ellipse at top left,#ffffff13,transparent 60%),#050505;box-shadow:0 0 80px #ffffff08,0 28px 90px #000}
+.login-card::before{left:12%;right:12%;background:linear-gradient(90deg,transparent,#fff,transparent)}
+.login-card .brand-icon{border-radius:50%;box-shadow:0 0 0 8px #ffffff06,0 0 0 16px #ffffff03;animation:mark-in .8s var(--ease) both}
+.login-card .brand-name{font-size:36px}.login-card .brand{margin-bottom:26px}.login-card .input-group{margin-top:16px}
+.game-tile,.desktop-card{transition:border-color .2s,box-shadow .2s}.game-tile:hover{border-color:#444}
+#game-reveal{position:relative;overflow:hidden}#game-reveal::after{content:'';position:absolute;inset:-100% auto -100% -60%;width:35%;transform:rotate(25deg);background:linear-gradient(90deg,transparent,#fff9,transparent);transition:left .5s}
+#game-reveal:hover::after{left:140%}
+@media(prefers-reduced-motion:reduce){#rdp-info-toggle,body #rdp-overlay .rdp-header,.game-tile,.desktop-card,#game-reveal::after{transition:none}}
 @media(max-width:950px){#game-room .lobby-grid{grid-template-columns:1fr;grid-template-rows:1fr 1fr}#game-players{max-height:12vh}}
 @media(max-width:620px),(max-height:550px){#game-room:not([hidden]){height:auto;min-height:0;grid-template-columns:1fr}#game-room .lobby-grid{grid-column:1;grid-row:3;grid-template-columns:1fr 1fr;grid-template-rows:auto}#game-room .lobby-chat{grid-column:1;grid-row:5;height:300px}.vote-panel{grid-row:4}#game-area .game-title{font-size:22px}}

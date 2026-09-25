@@ -1,6 +1,6 @@
 /* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v11';
+if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v12';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -9,6 +9,9 @@ const rdpOverlay = $('rdp-overlay'), rdpTitle = $('rdp-title');
 const rdpStatusDot = $('rdp-status-dot'), rdpConnStatus = $('rdp-conn-status');
 const streamFeed = $('stream-feed'), streamPlaceholder = $('stream-placeholder'), connMessage = $('conn-message');
 const obsFeed = $('obs-feed');
+if(typeof ResizeObserver!=='undefined'){
+  new ResizeObserver(entries=>{const height=entries[0].target.getBoundingClientRect().height;if(height>0)rdpOverlay.style.setProperty('--controls-height',height+'px');}).observe($('rdp-info'));
+}
 const context = streamFeed.getContext('2d', { alpha: false, desynchronized: true });
 
 let pairingCode = '', bridgeUrl = '', remoteSession = null;
@@ -242,7 +245,8 @@ async function openDesktop(num) {
   rdpOverlay.classList.add('active');
   rdpOverlay.classList.remove('info-open');
   $('rdp-info-toggle').setAttribute('aria-expanded','false');
-  $('rdp-info-toggle').textContent='Controls ▾';
+  $('rdp-info-toggle').textContent='▾';
+  $('rdp-info-toggle').setAttribute('aria-label','Show controls');
   document.body.classList.add('viewing-desktop');
   connMessage.textContent = 'Connecting to your home PC…';
   rdpConnStatus.textContent = 'Pairing…';

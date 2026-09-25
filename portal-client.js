@@ -30,11 +30,11 @@ window.ConnectPortal = (() => {
     if(key===chatKey)return;
     const log=el('game-chat-log'),atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60,newRoom=!chatKey.startsWith(next.code+':');
     chatKey=key;
-    log.replaceChildren(...messages.map(m=>{
+    log.replaceChildren(...messages.map((m,index)=>{
       const row=document.createElement('p'),name=document.createElement('strong'),text=document.createElement('span');
       name.textContent=m.name;name.style.color=m.color;text.textContent=m.text;row.append(name,text);
       const readers=(next.readers||[]).filter(p=>p.read>=m.id&&p.name!==m.name).map(p=>p.name);
-      if(readers.length){const seen=document.createElement('small');seen.textContent='Seen by '+readers.join(', ');row.append(seen);}return row;
+      if(index===messages.length-1&&readers.length){const seen=document.createElement('small');seen.textContent='Seen by '+readers.join(', ');row.append(seen);}return row;
     }));
     el('game-chat-empty').hidden=messages.length>0;
     if(atBottom||newRoom)log.scrollTop=log.scrollHeight;
@@ -54,7 +54,7 @@ window.ConnectPortal = (() => {
     el('game-countdown').hidden=room.phase!=='countdown';el('game-countdown').textContent=room.countdown||'';
     el('game-card').hidden=room.phase!=='playing';
     el('game-vote-ready').hidden=room.phase!=='playing';el('game-vote-ready').disabled=room.voteReady;
-    el('game-vote-ready').textContent=room.voteReady?'Waiting for players…':'Ready to vote';
+    el('game-vote-ready').textContent=room.voteReady?`${room.voteReadyCount||0}/${room.players.length} players want to vote…`:'Ready to vote';
     el('game-voting').hidden=room.phase!=='voting';
     const select=el('game-vote-choice'),selection=select.value,choices=JSON.stringify(room.players.map(p=>[p.id,p.name]));
     if(select._choices!==choices){select._choices=choices;
@@ -70,7 +70,7 @@ window.ConnectPortal = (() => {
   async function refresh(){
     if(pollBusy||!room||!token)return;
     pollBusy=true;const current=generation;
-    try {const next=await api('/api/lobby/state',presence());if(current===generation)render(next);}
+    try {const next=await api('/api/lobby/state',presence());if(current===generation){if(el('game-area').hidden||document.body.classList.contains('viewing-desktop'))room=next;else render(next);}}
     catch(error){if(current!==generation)return;secretOff();message(error.message);if(error.status===404){room=null;el('game-entry').hidden=false;el('game-room').hidden=true;}if(error.status===401){logout();document.getElementById('logout-btn').click();}}
     finally{pollBusy=false;}
   }
@@ -112,7 +112,7 @@ window.ConnectPortal = (() => {
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
   el('game-vote-lock').addEventListener('click',()=>action('vote',{round:room?.round,player:Number(el('game-vote-choice').value)}));
-  el('rdp-info-toggle').addEventListener('click',()=>{const open=el('rdp-overlay').classList.toggle('info-open');el('rdp-info-toggle').setAttribute('aria-expanded',String(open));el('rdp-info-toggle').textContent=open?'Controls ▴':'Controls ▾';});
+  el('rdp-info-toggle').addEventListener('click',()=>{const open=el('rdp-overlay').classList.toggle('info-open');el('rdp-info-toggle').setAttribute('aria-expanded',String(open));el('rdp-info-toggle').textContent=open?'▴':'▾';el('rdp-info-toggle').setAttribute('aria-label',open?'Hide controls':'Show controls');});
   el('game-chat-form').addEventListener('submit',async event=>{
     event.preventDefault();const input=el('game-chat-input'),button=el('game-chat-send'),text=input.value.trim();
     if(!text||button.disabled)return;
@@ -131,6 +131,7 @@ window.ConnectPortal = (() => {
     try {const role=await api('/api/lobby/reveal');if(current!==generation||room?.round!==round||room.phase!=='playing')return;
       el('game-secret').textContent=role.imposter?'IMPOSTER · Hint word: '+role.hint:role.word;
       el('game-secret').classList.toggle('imposter',role.imposter);el('game-secret').hidden=false;revealed=true;el('game-reveal').textContent='Hide';
+      el('game-secret').animate([{opacity:0,transform:'perspective(500px) rotateX(-65deg) scale(.85)',filter:'blur(8px)'},{opacity:1,transform:'perspective(500px) rotateX(0) scale(1)',filter:'blur(0)'}],{duration:window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:550,easing:'cubic-bezier(.16,1,.3,1)'});
     }catch(error){message(error.message);}finally{el('game-reveal').disabled=false;}
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)secretOff();});
