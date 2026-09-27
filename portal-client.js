@@ -43,6 +43,7 @@ window.ConnectPortal = (() => {
     if(!room||room.code!==next.code){el('game-chat-input').value='';el('game-chat-error').textContent='';chatKey='';}
     if(!room||room.round!==next.round||room.phase!==next.phase)secretOff();
     room=next;el('game-entry').hidden=true;el('game-room').hidden=false;
+    el('game-room').setAttribute('data-phase',room.phase);
     el('lobby-code').textContent=room.code;el('game-player-name').textContent=user.name;
     el('game-players').replaceChildren(...room.players.map(player=>{const item=document.createElement('li');item.textContent=player.name+(player.host?' · Host':'');item.style.color=player.color;return item;}));
     el('game-player-name').style.color=room.players.find(p=>p.name===user.name)?.color||'';
@@ -135,5 +136,16 @@ window.ConnectPortal = (() => {
     }catch(error){message(error.message);}finally{el('game-reveal').disabled=false;}
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)secretOff();});
+  // Brief feedback for normal UI clicks; desktop input never enters this path.
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('button');
+    if(!button||button.disabled||button.closest('#rdp-overlay')||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    if(!button.matches('.btn-login,.pc-action,.btn-logout'))return;
+    const rect=button.getBoundingClientRect(),wave=document.createElement('span');wave.className='click-wave';wave.setAttribute('aria-hidden','true');
+    wave.style.setProperty('--wave-x',(event.detail?event.clientX-rect.left:rect.width/2)+'px');
+    wave.style.setProperty('--wave-y',(event.detail?event.clientY-rect.top:rect.height/2)+'px');
+    button.append(wave);setTimeout(()=>wave.remove(),650);
+  });
+  document.addEventListener('visibilitychange',()=>document.body.classList.toggle('motion-paused',document.hidden));
   return {login,logout,view};
 })();
