@@ -272,7 +272,7 @@
       </div>
       <div class="rdp-conn-status" id="rdp-conn-status">Initializing...</div>
       <div class="rdp-actions">
-        <div class="mouse-speed-control" title="Captured mouse speed. Press Esc to release the mouse and adjust.">
+        <div class="mouse-speed-control" title="Captured mouse speed. Press - to unlock the mouse and adjust.">
           <label for="mouse-speed">Mouse speed</label>
           <input id="mouse-speed" type="range" min="0.25" max="3" step="0.05" value="1" aria-describedby="mouse-speed-value">
           <output id="mouse-speed-value" for="mouse-speed">1.00×</output>
@@ -297,14 +297,14 @@
       </div>
       <!-- Live video feed -->
       <video id="obs-feed" muted autoplay playsinline disablepictureinpicture aria-hidden="true" style="display:none;"></video>
-      <canvas id="stream-feed" tabindex="0" aria-label="Remote desktop. Click to type; Ctrl+Alt+Escape releases keyboard focus." style="display:none;"></canvas>
+      <canvas id="stream-feed" tabindex="0" aria-label="Remote desktop. Click to control; press minus to lock or unlock the mouse. Ctrl+Alt+Escape releases keyboard focus." title="Press - to lock or unlock the mouse" style="display:none;"></canvas>
     </div>
   </div>
 
   <script src="reader.js?v=20260914-quality-input-v3"></script>
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20260927-connect-v16"></script>
-  <script src="app.js?v=20260927-connect-v16"></script>
+  <script src="app.js?v=20260928-connect-v18"></script>
   <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
     <h2>Overlay?</h2>
     <p id="overlay-target">Desktop 1 · Monitor 2</p>

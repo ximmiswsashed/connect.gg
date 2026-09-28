@@ -773,7 +773,7 @@ async function lockGameMouse() {
       if (error.name !== 'NotSupportedError') throw error;
       await streamFeed.requestPointerLock();
     }
-  } catch (_) { rdpConnStatus.textContent = 'Click once inside the stream to let your browser capture the mouse.'; }
+  } catch (_) { rdpConnStatus.textContent = 'Mouse lock was blocked by your browser. Click the stream, then press - again.'; }
 }
 function handlePointerLockChange() {
   const locked = mouseLocked();
@@ -788,7 +788,7 @@ function handlePointerLockChange() {
 }
 document.addEventListener('pointerlockchange', handlePointerLockChange);
 document.addEventListener('pointerlockerror', () => {
-  rdpConnStatus.textContent = 'Click once inside the stream to let your browser capture the mouse.';
+  rdpConnStatus.textContent = 'Mouse lock was blocked by your browser. Click the stream, then press - again.';
 });
 const rawPointerUpdates = 'onpointerrawupdate' in window;
 if (rawPointerUpdates) document.addEventListener('pointerrawupdate', forwardLockedMovement, {passive:true});
@@ -796,12 +796,7 @@ document.addEventListener('mousemove', event => {
   if (!rawPointerUpdates) forwardLockedMovement(event);
 });
 streamFeed.addEventListener('pointermove', movePointer);
-streamFeed.addEventListener('pointerenter', event => {
-  movePointer(event);
-  // A drag into the canvas can carry a valid user activation in Chromium.
-  // Plain hover cannot be locked by any website, so pointerdown retries below.
-  if (event.buttons && !mouseLocked()) lockGameMouse();
-});
+streamFeed.addEventListener('pointerenter', movePointer);
 function mouseButtonDown(event) {
   const point = mouseLocked() ? {} : imagePoint(event);
   if (!point || !controlReady || ![0, 1, 2].includes(event.button)) return;
@@ -813,7 +808,6 @@ function mouseButtonDown(event) {
   activePointer = event.pointerId ?? 'mouse';
   lastPoint = point;
   sendControl({ kind: 'pointer', action: 'down', button: event.button, ...point });
-  if (!mouseLocked()) lockGameMouse();
 }
 function mouseButtonUp(event) {
   if (!heldMouseButtons.delete(event.button)) return;
@@ -844,6 +838,15 @@ streamFeed.addEventListener('wheel', event => {
 
 document.addEventListener('keydown', event => {
   if (!controlReady || !hasFrame || capturePaused || document.activeElement !== streamFeed) return;
+  if ((event.code === 'Minus' || event.code === 'NumpadSubtract') && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!event.repeat) {
+      if (mouseLocked()) document.exitPointerLock();
+      else lockGameMouse();
+    }
+    return;
+  }
   if ((mouseLocked() && event.code === 'Escape') || (event.code === 'Escape' && event.ctrlKey && event.altKey)) {
     if (mouseLocked()) document.exitPointerLock();
     event.preventDefault(); clearHeldInput(); streamFeed.blur(); return;
