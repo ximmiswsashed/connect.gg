@@ -146,3 +146,37 @@ body.viewing-desktop .access-backdrop{display:none}
 body.motion-paused .access-backdrop i::after{animation-play-state:paused}
 @media(max-width:480px){#account-page{padding:24px 18px}#account-page .login-card{padding:30px 24px 22px}}
 @media(prefers-reduced-motion:reduce){.access-backdrop i::after{animation:none}.page.active,#desktop-area:not([hidden]),#game-area:not([hidden]){animation:none}button,input,select,a{transition:color .1s,background-color .1s,border-color .1s!important}}
+
+/* Compact entry menus; keep monitor selection and lobby forms fully accessible. */
+@media(min-width:851px){
+  .side-menu{width:180px;padding:20px 10px}
+  .side-menu p{margin:0 10px 10px}
+  .side-menu button{padding:11px 13px;margin:3px 0;border-radius:12px}
+  .side-menu span{margin-top:2px}
+  #dashboard-page .dash-main{margin-left:180px;width:calc(100% - 180px);padding:26px 32px 48px;max-width:1200px}
+}
+#desktop-area>.dash-welcome{padding:0 0 16px;margin-bottom:16px}
+#desktop-area .dash-username{font-size:clamp(28px,3.5vw,42px);letter-spacing:-.035em}
+#desktop-area .dash-subtitle{margin-top:8px;font-size:13px}
+.desktop-grid{gap:14px}
+.desktop-card{min-height:148px;padding:18px 20px;border-radius:16px;align-items:center}
+.desktop-card .card-content{display:grid;grid-template-columns:48px minmax(0,1fr);grid-template-rows:auto auto;column-gap:14px;align-items:center}
+.desktop-card .card-icon{grid-column:1;grid-row:1/3;width:46px;height:42px;margin:0;border-radius:12px;transform:none}
+.desktop-card .card-icon svg{width:26px;height:26px}
+.desktop-card:hover .card-icon{transform:translateY(-2px)}
+.desktop-card .card-title{grid-column:2;grid-row:1;font-size:21px}
+.desktop-card .card-desc{grid-column:2;grid-row:2;font-size:12px}
+.desktop-card .card-status{grid-column:1/-1;margin-top:13px;font-size:11px}
+.desktop-card .card-arrow{flex:none;width:31px;height:31px}
+.desktop-card .card-arrow svg{width:16px;height:16px}
+#game-area .dash-welcome{margin-bottom:12px}
+#game-area .game-title{font-size:27px;margin:0}
+.game-entry{gap:14px;max-width:900px}
+.game-entry .game-tile{min-height:0;padding:18px 20px;border-radius:16px}
+.game-entry .game-tile h3{font-size:18px}
+.game-entry .game-tile p{font-size:12px;line-height:1.5;margin-top:5px}
+.game-entry .game-tile label{margin:10px 0 6px}
+.game-entry .game-tile input{padding:9px 12px}
+.game-entry .btn-login{min-height:40px;margin-top:12px;border-radius:10px}
+@media(max-width:850px){#dashboard-page .dash-main{padding:26px 20px 42px}}
+@media(max-width:600px){.desktop-grid,.game-entry{gap:12px}.desktop-card{min-height:128px;padding:15px 17px}.game-entry .game-tile{padding:16px}}
