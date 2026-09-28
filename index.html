@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260927-connect-v13">
-  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v13">
+  <link rel="stylesheet" href="style.css?v=20260927-connect-v14">
+  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v14">
 </head>
 <body>
 
@@ -35,17 +35,11 @@
 
   <!-- Account unlock: saved bridge secrets are encrypted in this browser. -->
   <section id="account-page" class="page active">
-    <div class="entry-intro">
-      <span class="entry-eyebrow"><span></span> A SPACE WITHOUT DISTANCE</span>
-      <h2>Your world.<br><span>Within reach.</span></h2>
-      <p>Your screens. Your friends. One place to connect.</p>
-      <div class="orbit-scene" aria-hidden="true"><div class="orbit-ring orbit-one"></div><div class="orbit-ring orbit-two"></div><div class="orbit-core">c<span>↗</span></div><span class="orbit-label orbit-label-one">CONNECT</span><span class="orbit-label orbit-label-two">PLAY</span></div>
-      <div class="entry-foot"><span>01 / CONNECT</span><span>02 / PLAY TOGETHER</span></div>
-    </div>
+    <div class="access-backdrop" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="login-container"><div class="login-card">
       <div class="brand"><div class="brand-icon">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="4" width="40" height="40" rx="12" stroke="currentColor" stroke-width="2.5"/><circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="2.5"/></svg>
-      </div><h1 class="brand-name">connect.gg</h1><p class="brand-tagline">Step into your space.</p></div>
+      </div><h1 class="brand-name">connect.gg</h1><p class="brand-tagline">computer access hub.</p></div>
       <form id="account-form" autocomplete="on">
         <div class="input-group"><label for="account-name">Name</label><div class="input-wrapper">
           <input id="account-name" name="username" autocomplete="username" required>
@@ -59,7 +53,6 @@
         <button type="submit" class="btn-login" id="account-submit">Sign in</button>
       </form>
       <button type="button" class="pc-action" id="account-toggle">New here? Create an account</button>
-      <p class="login-footer">Your friends are one code away.</p>
     </div></div>
   </section>
 
@@ -318,9 +311,9 @@
   </div>
 
   <script src="reader.js?v=20260914-quality-input-v3"></script>
-  <script src="connect-config.js?v=20260927-connect-v13"></script>
-  <script src="portal-client.js?v=20260927-connect-v13"></script>
-  <script src="app.js?v=20260927-connect-v13"></script>
+  <script src="connect-config.js?v=20260927-connect-v14"></script>
+  <script src="portal-client.js?v=20260927-connect-v14"></script>
+  <script src="app.js?v=20260927-connect-v14"></script>
   <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
     <h2>Overlay?</h2>
     <p id="overlay-target">Desktop 1 · Monitor 2</p>

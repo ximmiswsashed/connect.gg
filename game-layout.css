@@ -39,7 +39,7 @@ body #rdp-overlay.info-open #rdp-info-toggle{top:var(--controls-height,64px)}
 @media(max-width:950px){#game-room .lobby-grid{grid-template-columns:1fr;grid-template-rows:1fr 1fr}#game-players{max-height:12vh}}
 @media(max-width:620px),(max-height:550px){#game-room:not([hidden]){height:auto;min-height:0;grid-template-columns:1fr}#game-room .lobby-grid{grid-column:1;grid-row:3;grid-template-columns:1fr 1fr;grid-template-rows:auto}#game-room .lobby-chat{grid-column:1;grid-row:5;height:300px}.vote-panel{grid-row:4}#game-area .game-title{font-size:22px}}
 
-/* V13 — orbital monochrome. Motion stays outside the desktop video surface. */
+/* Monochrome interface. Motion stays outside the desktop video surface. */
 :root{--ease:cubic-bezier(.16,1,.3,1);--line:#ffffff20}
 body{background:#000}
 .bg-grid{background-size:56px 56px;opacity:.75;mask-image:linear-gradient(transparent,#0008 35%,transparent)}
@@ -115,3 +115,34 @@ body.motion-paused *{animation-play-state:paused!important}
 @media(max-height:700px) and (min-width:761px){.orbit-scene{height:155px;margin-top:8px;transform:scale(.75);transform-origin:top left}.entry-intro h2{font-size:60px;margin-top:20px}.entry-foot{margin-top:0}#account-page{padding:24px 48px}.login-card{padding:26px 28px}.login-card .brand{margin-bottom:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.click-wave{display:none}}
 @media(max-height:800px) and (min-width:851px){body:not(.playing-imposter) #dashboard-page .dash-main{padding:26px 36px}#desktop-area>.dash-welcome{padding:0 0 18px;margin-bottom:20px}#desktop-area .dash-username{font-size:48px}.desktop-card{min-height:210px}.monitor-menu .pc-action{padding:10px}.dash-footer{padding:14px}}
+
+/* V14: a single access point, framed by slow, monochrome signal arcs. */
+.bg-grid{display:none}
+#account-page{max-width:none;gap:0;padding:32px 20px;overflow:hidden}
+#account-page .login-container{flex:none;width:100%;max-width:410px;margin:auto;z-index:1}
+#account-page .login-card{border-radius:16px;padding:36px 32px 28px;background:#0a0a0af5;box-shadow:none}
+#account-page .login-card::after{display:none}
+#account-page .brand-name{letter-spacing:-.035em}
+#account-page .brand-tagline{font-size:13px;color:#b5b5b5}
+.access-backdrop{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#161616,black 68%)}
+.access-backdrop i{position:absolute;left:50%;top:50%;width:min(115vw,1050px);aspect-ratio:1;border:1px solid #ffffff12;border-radius:50%;transform:translate(-50%,-50%) rotate(-25deg) scaleY(.58)}
+.access-backdrop i::after{content:'';position:absolute;inset:-1px;border:1px solid transparent;border-top-color:#ffffff60;border-radius:50%;animation:signal-orbit 28s linear infinite}
+.access-backdrop i:nth-child(2){width:min(145vw,1380px);transform:translate(-50%,-50%) rotate(25deg) scaleY(.62)}
+.access-backdrop i:nth-child(2)::after{animation-duration:38s;animation-direction:reverse}
+.access-backdrop i:nth-child(3){width:min(175vw,1660px);transform:translate(-50%,-50%) rotate(-25deg) scaleY(.62)}
+.access-backdrop i:nth-child(3)::after{animation-duration:48s;opacity:.5}
+@keyframes signal-orbit{to{transform:rotate(360deg)}}
+.page.active{animation:access-enter .3s var(--ease) both}
+#desktop-area:not([hidden]),#game-area:not([hidden]){animation:access-enter .24s var(--ease) both}
+@keyframes access-enter{from{opacity:.3;clip-path:inset(0 0 2% 0);transform:translateY(6px)}to{opacity:1;clip-path:inset(0);transform:none}}
+button,select,a{transition:color .15s,background-color .15s,border-color .15s,transform .15s var(--ease)}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #fff;outline-offset:4px}
+input::placeholder{color:#999}input,textarea{caret-color:#fff}
+::selection{background:#fff;color:#000}
+*{scrollbar-color:#555 #080808;scrollbar-width:thin}
+.login-card,.login-card .brand-icon,.dash-welcome,.pc-card-group{animation-duration:.3s;animation-delay:0s}
+.side-menu::after,.desktop-card::before,#desktop-2-btn::before,.game-entry .game-tile::before,.game-entry .game-tile+ .game-tile::before{content:none}
+body.viewing-desktop .access-backdrop{display:none}
+body.motion-paused .access-backdrop i::after{animation-play-state:paused}
+@media(max-width:480px){#account-page{padding:24px 18px}#account-page .login-card{padding:30px 24px 22px}}
+@media(prefers-reduced-motion:reduce){.access-backdrop i::after{animation:none}.page.active,#desktop-area:not([hidden]),#game-area:not([hidden]){animation:none}button,input,select,a{transition:color .1s,background-color .1s,border-color .1s!important}}
