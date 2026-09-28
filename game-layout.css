@@ -180,3 +180,6 @@ body.motion-paused .access-backdrop i::after{animation-play-state:paused}
 .game-entry .btn-login{min-height:40px;margin-top:12px;border-radius:10px}
 @media(max-width:850px){#dashboard-page .dash-main{padding:26px 20px 42px}}
 @media(max-width:600px){.desktop-grid,.game-entry{gap:12px}.desktop-card{min-height:128px;padding:15px 17px}.game-entry .game-tile{padding:16px}}
+.monitor-menu .download-client{grid-column:1/-1;text-align:center;text-decoration:none;background:#fff;color:#000;border-color:#fff;font-weight:650}
+.monitor-menu .download-client:hover{background:#ddd;color:#000;border-color:#ddd}
+.monitor-menu .download-hint{grid-column:1/-1;color:#aaa;font-size:11px;line-height:1.45;padding:0 4px 4px}

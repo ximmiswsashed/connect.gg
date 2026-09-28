@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260927-connect-v15">
-  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v15">
+  <link rel="stylesheet" href="style.css?v=20260927-connect-v16">
+  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v16">
 </head>
 <body>
 
@@ -204,6 +204,8 @@
           <button class="pc-action" onclick="chooseMonitorTwo(1)">Monitor 1</button>
           <button class="pc-action" onclick="chooseMonitorTwo()">Monitor 2</button>
           <button class="pc-action" id="stop-monitor-overlay" onclick="stopMonitorOverlay()">Stop monitor overlay</button>
+          <a class="pc-action download-client" href="https://github.com/ximmiswsashed/connect.gg/releases/download/client-v1/Connect-Client-Desktop-1.exe">Download dependencies</a>
+          <small class="download-hint">Run on your Windows PC to install the bridge and show its pairing code and HTTPS address.</small>
         </div>
         </div>
 
@@ -237,6 +239,8 @@
           <button class="pc-action" onclick="configurePC(2)">Connection settings</button>
           <button class="pc-action" onclick="openMonitor(2,1)">Monitor 1</button>
           <button class="pc-action" onclick="openMonitor(2,2)">Monitor 2</button>
+          <a class="pc-action download-client" href="https://github.com/ximmiswsashed/connect.gg/releases/download/client-v1/Connect-Client-Desktop-2.exe">Download dependencies</a>
+          <small class="download-hint">Run on your second Windows PC to install the bridge and show its pairing code and HTTPS address.</small>
         </div>
         </div>
       </div>
@@ -308,9 +312,9 @@
   </div>
 
   <script src="reader.js?v=20260914-quality-input-v3"></script>
-  <script src="connect-config.js?v=20260927-connect-v14"></script>
-  <script src="portal-client.js?v=20260927-connect-v14"></script>
-  <script src="app.js?v=20260927-connect-v14"></script>
+  <script src="connect-config.js?v=20260927-connect-v16"></script>
+  <script src="portal-client.js?v=20260927-connect-v16"></script>
+  <script src="app.js?v=20260927-connect-v16"></script>
   <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
     <h2>Overlay?</h2>
     <p id="overlay-target">Desktop 1 · Monitor 2</p>

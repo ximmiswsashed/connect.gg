@@ -33,7 +33,7 @@ const computers = {};
 const AUTH_NAME = 'grief';
 const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
 const SAVED_COMPUTERS = 'tuffyblud.encryptedComputers.v1';
-let accountPassword = '', storageKey = null;
+let accountPassword = '', storageKey = null, accountIsAdmin = false, savedComputersKey = SAVED_COMPUTERS;
 let selectedPC = 1;
 let capturePaused = false, controlNoticeUntil = 0;
 let reconnectControlTimer = null, controlRetries = 0, activeMonitor = 1;
@@ -57,9 +57,11 @@ $('mouse-speed-reset').addEventListener('click', () => setMouseSpeed(1));
 
 function fromBase64(value) { return Uint8Array.from(atob(value), c => c.charCodeAt(0)); }
 function toBase64(value) { return btoa(String.fromCharCode(...new Uint8Array(value))); }
-async function deriveAccount(password) {
+async function deriveAccount(password, name='grief') {
   const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:fromBase64(AUTH_SALT),iterations:310000,hash:'SHA-256'},material,512));
+  const canonical=name.normalize('NFKC').toLowerCase();
+  const salt=canonical==='grief'?fromBase64(AUTH_SALT):new TextEncoder().encode(AUTH_SALT+':'+canonical);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:310000,hash:'SHA-256'},material,512));
   const verifier = toBase64(bits.slice(0,32));
   const key = await crypto.subtle.importKey('raw',bits.slice(32),{name:'AES-GCM'},false,['encrypt','decrypt']);
   bits.fill(0);
@@ -70,10 +72,10 @@ async function saveComputers() {
   const iv=crypto.getRandomValues(new Uint8Array(12));
   const plaintext=new TextEncoder().encode(JSON.stringify(computers));
   const ciphertext=await crypto.subtle.encrypt({name:'AES-GCM',iv},storageKey,plaintext);
-  localStorage.setItem(SAVED_COMPUTERS,JSON.stringify({iv:toBase64(iv),data:toBase64(ciphertext)}));
+  localStorage.setItem(savedComputersKey,JSON.stringify({iv:toBase64(iv),data:toBase64(ciphertext)}));
 }
 async function restoreComputers(key) {
-  const saved=localStorage.getItem(SAVED_COMPUTERS);
+  const saved=localStorage.getItem(savedComputersKey);
   if(!saved)return;
   const record=JSON.parse(saved);
   const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromBase64(record.iv)},key,fromBase64(record.data));
@@ -87,15 +89,15 @@ accountForm.addEventListener('submit',async event=>{
   const submit=$('account-submit');submit.disabled=true;
   try {
     const user=await window.ConnectPortal.login(name,password);
-    if(user.admin){
-      const derived=await deriveAccount(password);
-      try { await restoreComputers(derived.key); } catch (_) { /* Keep login usable if old local settings were damaged. */ }
-      storageKey=derived.key;accountPassword=password;
-    } else {storageKey=null;accountPassword='';}
+    accountIsAdmin=!!user.admin;
+    savedComputersKey=user.admin?SAVED_COMPUTERS:SAVED_COMPUTERS+'.'+user.name.normalize('NFKC').toLowerCase();
+    const derived=await deriveAccount(password,user.name);
+    try { await restoreComputers(derived.key); } catch (_) { /* Keep login usable if old local settings were damaged. */ }
+    storageKey=derived.key;accountPassword=user.admin?password:'';
     $('account-password').value='';transitionTo(dashPage);
   } catch(errorValue) {
     error.textContent=errorValue.message+(errorValue.retryAfter?' Try again in '+Math.ceil(errorValue.retryAfter/60)+' minute(s).':'');
-    error.classList.add('visible');accountPassword='';storageKey=null;
+    error.classList.add('visible');accountPassword='';storageKey=null;accountIsAdmin=false;
   } finally {submit.disabled=false;}
 });
 
@@ -192,7 +194,7 @@ logoutBtn.addEventListener('click', () => {
   closeOverlay();
   pairingCode = bridgeUrl = '';
   for (const key of Object.keys(computers)) delete computers[key];
-  accountPassword='';storageKey=null;loginForm.reset();accountForm.reset();
+  accountPassword='';storageKey=null;accountIsAdmin=false;savedComputersKey=SAVED_COMPUTERS;loginForm.reset();accountForm.reset();
   transitionTo(accountPage);
 });
 
@@ -212,7 +214,7 @@ async function openMonitor(pc, monitor) {
 }
 
 function pairRequest(code,desktop) {
-  return {pairingCode:code,desktop,accountName:AUTH_NAME,accountPassword};
+  return accountIsAdmin?{pairingCode:code,desktop,accountName:AUTH_NAME,accountPassword}:{pairingCode:code,desktop};
 }
 
 async function bridgeFetch(path, body, base = bridgeUrl) {

@@ -83,7 +83,6 @@ window.ConnectPortal = (() => {
     }catch(error){message(error.message);}
   }
   function view(which){
-    if(which==='computers'&&!user?.admin)return;
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.remove('nav-open');secretOff();
@@ -93,7 +92,7 @@ window.ConnectPortal = (() => {
   async function login(name,password) {
     if(registering){await api('/api/register',{name,password});}
     const result=await api('/api/login',{name,password});token=result.token;user=result.user;generation++;
-    el('signed-in-name').textContent=user.name+(user.admin?' · Admin':'');el('nav-computers').hidden=!user.admin;
+    el('signed-in-name').textContent=user.name+(user.admin?' · Admin':'');el('nav-computers').hidden=false;
     const topics=await api('/api/topics',null,'GET');
     el('game-topic').replaceChildren(...topics.topics.map(topic=>{const option=document.createElement('option');option.value=option.textContent=topic;return option;}));
     view(user.admin?'computers':'game');clearInterval(poll);poll=setInterval(refresh,750);
