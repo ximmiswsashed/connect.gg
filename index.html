@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260927-connect-v16">
-  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v16">
+  <link rel="stylesheet" href="style.css?v=20260927-connect-v17">
+  <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v17">
 </head>
 <body>
 
@@ -187,10 +187,6 @@
             </div>
             <h3 class="card-title">Desktop 1</h3>
             <p class="card-desc">Your main computer</p>
-            <div class="card-status">
-              <span class="status-dot"></span>
-              <span>Select monitors</span>
-            </div>
           </div>
           <div class="card-arrow">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -203,9 +199,8 @@
           <button class="pc-action" onclick="configurePC(1)">Connection settings</button>
           <button class="pc-action" onclick="chooseMonitorTwo(1)">Monitor 1</button>
           <button class="pc-action" onclick="chooseMonitorTwo()">Monitor 2</button>
-          <button class="pc-action" id="stop-monitor-overlay" onclick="stopMonitorOverlay()">Stop monitor overlay</button>
+          <button class="pc-action" id="stop-monitor-overlay" onclick="stopMonitorOverlay()" hidden>Stop monitor overlay</button>
           <a class="pc-action download-client" href="https://github.com/ximmiswsashed/connect.gg/releases/download/client-v1/Connect-Client-Desktop-1.exe">Download dependencies</a>
-          <small class="download-hint">Run on your Windows PC to install the bridge and show its pairing code and HTTPS address.</small>
         </div>
         </div>
 
@@ -223,10 +218,6 @@
             </div>
             <h3 class="card-title">Desktop 2</h3>
             <p class="card-desc">Your second computer</p>
-            <div class="card-status">
-              <span class="status-dot"></span>
-              <span>Select monitors</span>
-            </div>
           </div>
           <div class="card-arrow">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -240,7 +231,6 @@
           <button class="pc-action" onclick="openMonitor(2,1)">Monitor 1</button>
           <button class="pc-action" onclick="openMonitor(2,2)">Monitor 2</button>
           <a class="pc-action download-client" href="https://github.com/ximmiswsashed/connect.gg/releases/download/client-v1/Connect-Client-Desktop-2.exe">Download dependencies</a>
-          <small class="download-hint">Run on your second Windows PC to install the bridge and show its pairing code and HTTPS address.</small>
         </div>
         </div>
       </div>
