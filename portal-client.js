@@ -1,4 +1,4 @@
-/* connect.gg accounts and Imposter. All authorization/roles live on the server. */
+/* Portiq accounts and Imposter. All authorization/roles live on the server. */
 window.ConnectPortal = (() => {
   const el=id=>document.getElementById(id);
   let token='',user=null,registering=false,room=null,revealed=false,poll=null,pollBusy=false,generation=0,refreshFailures=0,connectionNotice=false;
