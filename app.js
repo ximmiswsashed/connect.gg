@@ -43,18 +43,97 @@ let overlayMonitor = 2, overlayStarting = false, inputSamples = false;
 let h264Available = false, h264Decoder = null, h264Failed = false;
 let videoTargetFps = 60;
 let mouseSpeed = 1;
-try { const saved = Number(localStorage.getItem('tuffyblud.mouseSpeed.v1')); if (saved >= .25 && saved <= 3) mouseSpeed = saved; } catch (_) {}
+try { const saved = Number(localStorage.getItem('portiq.mouseSpeed.v2')); if (saved >= .1 && saved <= 5) mouseSpeed = saved; } catch (_) {}
 function setMouseSpeed(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return;
-  mouseSpeed = Math.max(.25, Math.min(3, number));
+  mouseSpeed = Math.max(.1, Math.min(5, number));
   $('mouse-speed').value = mouseSpeed;
-  $('mouse-speed-value').textContent = mouseSpeed.toFixed(2) + '×';
-  try { localStorage.setItem('tuffyblud.mouseSpeed.v1', String(mouseSpeed)); } catch (_) {}
+  $('mouse-speed-value').textContent = mouseSpeed.toFixed(1) + '×';
+  try { localStorage.setItem('portiq.mouseSpeed.v2', String(mouseSpeed)); } catch (_) {}
 }
 setMouseSpeed(mouseSpeed);
 $('mouse-speed').addEventListener('input', event => setMouseSpeed(event.target.value));
 $('mouse-speed-reset').addEventListener('click', () => setMouseSpeed(1));
+
+let audioSocket=null, audioDecoder=null, audioContext=null, audioGain=null, audioNextAt=0;
+let soundLevel=.7, soundBeforeMute=.7;
+try { const saved=localStorage.getItem('portiq.soundLevel.v1');if(saved!==null){const level=Number(saved);if(level>=0&&level<=1)soundLevel=level;} } catch(_) {}
+function setSoundLevel(value) {
+  const number=Number(value);if(!Number.isFinite(number))return;
+  soundLevel=Math.max(0,Math.min(1,number));
+  if(soundLevel>0)soundBeforeMute=soundLevel;
+  $('sound-level').value=Math.round(soundLevel*100);
+  $('sound-value').textContent=Math.round(soundLevel*100)+'%';
+  $('sound-toggle').setAttribute('aria-label',soundLevel?'Mute sound':'Unmute sound');
+  $('sound-toggle').title=soundLevel?'Mute sound':'Unmute sound';
+  if(audioGain)audioGain.gain.value=soundLevel;
+  try{localStorage.setItem('portiq.soundLevel.v1',String(soundLevel));}catch(_){}
+  if(remoteSession&&controlReady){
+    if(soundLevel){primeAudio();if(!audioSocket)startAudio(epoch);}
+    else stopAudio();
+  }
+}
+function primeAudio() {
+  if(typeof AudioContext==='undefined')return;
+  try {
+    if(!audioContext||audioContext.state==='closed'){
+      audioContext=new AudioContext({latencyHint:'interactive'});
+      audioGain=audioContext.createGain();audioGain.gain.value=soundLevel;
+      audioGain.connect(audioContext.destination);
+    }
+    if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+  }catch(_){}
+}
+setSoundLevel(soundLevel);
+$('sound-level').addEventListener('input',event=>setSoundLevel(Number(event.target.value)/100));
+$('sound-toggle').addEventListener('click',()=>setSoundLevel(soundLevel?0:soundBeforeMute));
+
+function stopAudio() {
+  audioSocket?.close();audioSocket=null;
+  if(audioDecoder&&audioDecoder.state!=='closed')audioDecoder.close();audioDecoder=null;
+  audioNextAt=0;
+  if(audioContext){audioContext.close().catch(()=>{});audioContext=null;audioGain=null;}
+}
+function playAudioFrame(frame) {
+  try {
+    if(!audioContext||audioContext.state!=='running'||!soundLevel)return;
+    const buffer=audioContext.createBuffer(frame.numberOfChannels,frame.numberOfFrames,frame.sampleRate);
+    for(let channel=0;channel<frame.numberOfChannels;channel++)
+      frame.copyTo(buffer.getChannelData(channel),{planeIndex:channel,format:'f32-planar'});
+    const now=audioContext.currentTime;
+    if(!audioNextAt||audioNextAt<now||audioNextAt>now+.22)audioNextAt=now+.06;
+    const source=audioContext.createBufferSource();source.buffer=buffer;source.connect(audioGain);
+    source.start(audioNextAt);audioNextAt+=buffer.duration;
+  }catch(_){}finally{frame.close();}
+}
+function startAudio(current) {
+  if(typeof AudioDecoder==='undefined'||typeof EncodedAudioChunk==='undefined'||typeof AudioContext==='undefined')return;
+  primeAudio();
+  const socket=audioSocket=makeSocket('/control/audio');socket.binaryType='arraybuffer';
+  let sequence=0;
+  const active=()=>current===epoch&&audioSocket===socket;
+  socket.onopen=()=>{if(active())socket.send(JSON.stringify({type:'auth',session:remoteSession}));else socket.close();};
+  socket.onmessage=event=>{
+    if(!active())return;
+    try{
+      if(typeof event.data==='string'){
+        const message=JSON.parse(event.data);
+        if(message.type==='error'){socket.close();return;}
+        if(message.type!=='ready'||message.codec!=='opus')return;
+        audioDecoder?.close();audioNextAt=0;sequence=0;
+        audioDecoder=new AudioDecoder({output:playAudioFrame,error:()=>socket.close()});
+        audioDecoder.configure({codec:'opus',sampleRate:message.sampleRate,numberOfChannels:message.channels});
+        return;
+      }
+      if(!audioDecoder||audioDecoder.state!=='configured')return;
+      if(audioDecoder.decodeQueueSize>10){audioDecoder.reset();audioDecoder.configure({codec:'opus',sampleRate:48000,numberOfChannels:2});audioNextAt=0;}
+      audioDecoder.decode(new EncodedAudioChunk({type:'key',timestamp:sequence++*20000,data:event.data}));
+    }catch(_){socket.close();}
+  };
+  socket.onerror=()=>{};
+  socket.onclose=()=>{if(active()){audioSocket=null;if(audioDecoder&&audioDecoder.state!=='closed')audioDecoder.close();audioDecoder=null;}};
+}
 
 function fromBase64(value) { return Uint8Array.from(atob(value), c => c.charCodeAt(0)); }
 function toBase64(value) { return btoa(String.fromCharCode(...new Uint8Array(value))); }
@@ -109,6 +188,7 @@ async function chooseMonitorTwo(monitor = 2) {
 }
 
 async function acceptMonitorTwo(useOverlay) {
+  primeAudio();
   if (overlayStarting) return;
   const targetMonitor = overlayMonitor;
   $('overlay-choice').close();
@@ -205,6 +285,7 @@ function handleDesktopClick(num) {
 }
 
 async function openMonitor(pc, monitor) {
+  primeAudio();
   if (!computers[pc]) return configurePC(pc);
   closeOverlay();
   selectedPC = pc;
@@ -301,6 +382,7 @@ function connectSockets(current, pairingResult) {
         controlReady = true;
         lastPongAt = performance.now();
         startPreferredVideo(current, pairingResult);
+        if(soundLevel)startAudio(current);
         heartbeat = setInterval(() => {
           if (input.readyState === WebSocket.OPEN) {
             input.send(JSON.stringify({ type: 'ping', t: performance.now() }));
@@ -661,7 +743,7 @@ function queueRelativeMovement(deltaX, deltaY) {
   if (!Number.isFinite(deltaX) || !Number.isFinite(deltaY) || (!deltaX && !deltaY)) return;
   // Preserve individual raw samples. Windows pointer acceleration is velocity
   // sensitive, so combining eight milliseconds changes fast-movement physics.
-  sendControl({kind:'pointer', action:'move-relative', deltaX:deltaX*mouseSpeed, deltaY:deltaY*mouseSpeed});
+  sendControl({kind:'pointer', action:'move-relative', deltaX:deltaX*mouseSpeed*3, deltaY:deltaY*mouseSpeed*3});
 }
 
 function forwardLockedMovement(event) {
@@ -670,7 +752,7 @@ function forwardLockedMovement(event) {
   const samples=coalesced.length ? coalesced : [event];
   if(inputSamples) {
     const deltas=samples.filter(s=>Number.isFinite(s.movementX)&&Number.isFinite(s.movementY)&&(s.movementX||s.movementY))
-      .map(s=>[s.movementX*mouseSpeed,s.movementY*mouseSpeed]);
+      .map(s=>[s.movementX*mouseSpeed*3,s.movementY*mouseSpeed*3]);
     for(let i=0;i<deltas.length;i+=32)sendControl({kind:'pointer',action:'move-relative',samples:deltas.slice(i,i+32)});
     return;
   }
@@ -807,6 +889,7 @@ function clearHeldInput() {
 }
 
 function stopConnections() {
+  stopAudio();
   if (mouseLocked()) document.exitPointerLock();
   epoch++;
   controlReady = hasFrame = false;
