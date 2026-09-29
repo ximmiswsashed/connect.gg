@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260927-connect-v17">
+  <link rel="stylesheet" href="style.css?v=20260929-connect-v21">
   <link rel="stylesheet" href="game-layout.css?v=20260927-connect-v17">
 </head>
 <body>
@@ -303,22 +303,23 @@
   <script src="reader.js?v=20260914-quality-input-v3"></script>
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20260928-connect-v19"></script>
-  <script src="app.js?v=20260929-connect-v20"></script>
-  <dialog id="overlay-choice" style="background:#151515;color:#eee;border:1px solid #444;border-radius:16px;padding:28px;max-width:420px">
-    <h2>Overlay?</h2>
-    <p id="overlay-target">Desktop 1 · Monitor 2</p>
-    <p>Show a Desktop 2 monitor here with black transparent. Mouse clicks pass through to Desktop 1.</p>
-    <label class="overlay-option" for="overlay-source">Source
+  <script src="app.js?v=20260929-connect-v21"></script>
+  <dialog id="overlay-choice" aria-labelledby="overlay-title">
+    <h2 id="overlay-title">Overlay?</h2>
+    <label class="overlay-option" for="overlay-source">Monitor to overlay
       <select id="overlay-source"><option value="1">Desktop 2 · Monitor 1</option><option value="2" selected>Desktop 2 · Monitor 2</option></select>
     </label>
-    <label class="overlay-option" for="overlay-threshold">Black removal
-      <input id="overlay-threshold" type="range" min="0" max="64" value="18" oninput="document.getElementById('overlay-threshold-value').value=this.value">
-      <output id="overlay-threshold-value" for="overlay-threshold">18</output>
+    <label class="overlay-option" for="overlay-threshold">Black color removal
+      <span class="overlay-range">
+        <input id="overlay-threshold" type="range" min="0" max="64" value="18" oninput="document.getElementById('overlay-threshold-value').value=this.value">
+        <output id="overlay-threshold-value" for="overlay-threshold">18</output>
+      </span>
     </label>
-    <p class="overlay-hint">Raise black removal to clean dark edges; lower it to preserve shadows. Ctrl+Alt+O closes the overlay on the home PC.</p>
-    <button class="pc-action" onclick="acceptMonitorTwo(true)">Yes</button>
-    <button class="pc-action" onclick="acceptMonitorTwo(false)">No — view normally</button>
-    <button class="pc-action" onclick="document.getElementById('overlay-choice').close()">Cancel</button>
+    <div class="overlay-actions">
+      <button class="pc-action" onclick="acceptMonitorTwo(true)">Yes</button>
+      <button class="pc-action" onclick="acceptMonitorTwo(false)">No</button>
+      <button class="pc-action" onclick="document.getElementById('overlay-choice').close()">Cancel</button>
+    </div>
   </dialog>
 </body>
 </html>
