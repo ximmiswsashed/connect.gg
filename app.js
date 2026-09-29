@@ -41,6 +41,7 @@ let overlayLink = null;
 let overlayHeartbeat = null;
 let overlayMonitor = 2, overlayStarting = false, inputSamples = false;
 let h264Available = false, h264Decoder = null, h264Failed = false;
+let videoTargetFps = 60;
 let mouseSpeed = 1;
 try { const saved = Number(localStorage.getItem('tuffyblud.mouseSpeed.v1')); if (saved >= .25 && saved <= 3) mouseSpeed = saved; } catch (_) {}
 function setMouseSpeed(value) {
@@ -459,6 +460,7 @@ function startH264Video(current) {
         if(message.type==='error')return recover();
         if(message.type!=='ready')return;
         if(!/^avc1\.[0-9a-f]{6}$/i.test(message.codec)||!(message.width>0&&message.height>0))throw new Error('Invalid codec');
+        videoTargetFps=message.fps===30?30:60;
         config={codec:message.codec,codedWidth:message.width,codedHeight:message.height,optimizeForLatency:true};
         sourceGeometry=[message.nativeWidth,message.nativeHeight];
         closeH264Decoder();
@@ -504,9 +506,9 @@ function startH264Video(current) {
       lastSequence=sequence;
       if(needKey&&!key){ack(sequence);return;}
       needKey=false;
-      const timestamp=Math.round(sequence*1000000/60);
+      const timestamp=Math.round(sequence*1000000/videoTargetFps);
       submitted.set(timestamp,{sequence,at:performance.now()});
-      h264Decoder.decode(new EncodedVideoChunk({type:key?'key':'delta',timestamp,duration:16667,data:new Uint8Array(event.data,5)}));
+      h264Decoder.decode(new EncodedVideoChunk({type:key?'key':'delta',timestamp,duration:Math.round(1000000/videoTargetFps),data:new Uint8Array(event.data,5)}));
     } catch (_) {h264Failed=true;recover();}
   };
   socket.onerror=()=>{};
@@ -666,12 +668,13 @@ function updateStats() {
   if (!hasFrame || capturePaused || performance.now()<controlNoticeUntil) return;
   const now = performance.now(), seconds = (now - statsAt) / 1000;
   if (seconds < 1) return;
-  const fps = Math.min(60, Math.round(painted / seconds));
+  const targetFps = mediaMode==='h264' ? videoTargetFps : 60;
+  const fps = Math.min(targetFps, Math.round(painted / seconds));
   const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
   const resolution = mediaMode==='obs' ? (obsFeed.videoWidth||1920)+'×'+(obsFeed.videoHeight||1080) : streamFeed.width+'×'+streamFeed.height;
   if (mediaMode === 'obs') sampleVideoBuffer();
   rdpConnStatus.textContent = (mediaMode==='obs'?'Direct · ':mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
-    '/60 FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
+    '/'+targetFps+' FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
     (mediaMode==='jpeg'?' · '+mbps+' Mbps':mediaMode==='h264'?' · '+mbps+' Mbps'+(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms decode'):(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms video buffer'));
   painted = receivedBytes = 0;
   statsAt = now;
@@ -897,7 +900,7 @@ function stopConnections() {
   heldMouseButtons.clear();
   controlSocket?.close(); videoSocket?.close();
   mediaReader?.close();mediaReader=null;
-  closeH264Decoder();h264Available=false;h264Failed=false;
+  closeH264Decoder();h264Available=false;h264Failed=false;videoTargetFps=60;
   if(typeof obsFeed.cancelVideoFrameCallback==='function'&&obsFrameCallback!==null)obsFeed.cancelVideoFrameCallback(obsFrameCallback);
   else clearTimeout(obsFrameCallback);
   obsFrameCallback=null;mediaMode=null;videoBufferMs=null;lastVideoStats=null;obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
