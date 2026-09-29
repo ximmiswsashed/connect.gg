@@ -1,10 +1,10 @@
 /* connect.gg accounts and Imposter. All authorization/roles live on the server. */
 window.ConnectPortal = (() => {
   const el=id=>document.getElementById(id);
-  let token='',user=null,registering=false,room=null,revealed=false,poll=null,pollBusy=false,generation=0;
+  let token='',user=null,registering=false,room=null,revealed=false,poll=null,pollBusy=false,generation=0,refreshFailures=0,connectionNotice=false;
   const base=(window.CONNECT_API||'').replace(/\/$/,'');
-  async function api(path,body,method='POST') {
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  async function api(path,body,method='POST',timeout=12000) {
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
     try {
       const response=await fetch(base+path,{method,cache:'no-store',signal:controller.signal,
         headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},
@@ -13,7 +13,11 @@ window.ConnectPortal = (() => {
       try {data=await response.json();}catch(_){throw new Error('The server needs an update. Please try again shortly.');}
       if(!response.ok){const error=new Error(data.error||'Please try again.');error.status=response.status;error.retryAfter=data.retryAfter;throw error;}
       return data;
-    } catch(error) { if(error.name==='AbortError'||error instanceof TypeError)throw new Error('The server is offline. Try again shortly.');throw error; }
+    } catch(error) {
+      if(error.name==='AbortError')throw new Error('Connection timed out. Retrying…');
+      if(error instanceof TypeError)throw new Error('Cannot reach the home bridge. Check the launcher and Tailscale.');
+      throw error;
+    }
     finally {clearTimeout(timer);}
   }
   function secretOff(){revealed=false;el('game-secret').textContent='';el('game-secret').hidden=true;el('game-reveal').textContent='Reveal';el('game-secret').classList.remove('imposter');}
@@ -71,8 +75,19 @@ window.ConnectPortal = (() => {
   async function refresh(){
     if(pollBusy||!room||!token)return;
     pollBusy=true;const current=generation;
-    try {const next=await api('/api/lobby/state',presence());if(current===generation){if(el('game-area').hidden||document.body.classList.contains('viewing-desktop'))room=next;else render(next);}}
-    catch(error){if(current!==generation)return;secretOff();message(error.message);if(error.status===404){room=null;el('game-entry').hidden=false;el('game-room').hidden=true;}if(error.status===401){logout();document.getElementById('logout-btn').click();}}
+    try {const next=await api('/api/lobby/state',presence(),'POST',6000);if(current===generation){refreshFailures=0;if(connectionNotice){message('');connectionNotice=false;}if(el('game-area').hidden||document.body.classList.contains('viewing-desktop'))room=next;else render(next);}}
+    catch(error){
+      if(current!==generation)return;
+      if(!error.status){
+        refreshFailures++;
+        if(refreshFailures<2)return;
+        message(error.message);connectionNotice=true;
+        return;
+      }
+      refreshFailures=0;secretOff();message(error.message);
+      if(error.status===404){room=null;el('game-entry').hidden=false;el('game-room').hidden=true;}
+      if(error.status===401){logout();document.getElementById('logout-btn').click();}
+    }
     finally{pollBusy=false;}
   }
   async function action(name,data={}) {
