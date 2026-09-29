@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260929-portiq-v26">
+  <link rel="stylesheet" href="style.css?v=20260929-portiq-v27">
   <link rel="stylesheet" href="game-layout.css?v=20260929-portiq-v24">
 </head>
 <body>
@@ -274,9 +274,15 @@
       <div class="rdp-actions">
         <div class="mouse-speed-control" title="Captured mouse speed. Press - to unlock the mouse and adjust.">
           <label for="mouse-speed">Mouse speed</label>
-          <input id="mouse-speed" type="range" min="0.25" max="3" step="0.05" value="1" aria-describedby="mouse-speed-value">
-          <output id="mouse-speed-value" for="mouse-speed">1.00×</output>
+          <input id="mouse-speed" type="range" min="0.1" max="5" step="0.1" value="1" aria-describedby="mouse-speed-value">
+          <output id="mouse-speed-value" for="mouse-speed">1.0×</output>
           <button id="mouse-speed-reset" class="rdp-btn" title="Reset mouse speed to 1×" aria-label="Reset mouse speed">↺</button>
+        </div>
+        <div class="sound-control">
+          <button id="sound-toggle" class="rdp-btn" type="button" aria-label="Mute sound" title="Mute sound"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Z"/><path d="M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></svg></button>
+          <label for="sound-level">Sound</label>
+          <input id="sound-level" type="range" min="0" max="100" step="1" value="70" aria-describedby="sound-value">
+          <output id="sound-value" for="sound-level">70%</output>
         </div>
         <button id="rdp-close-btn" class="rdp-btn close" title="Disconnect">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -301,7 +307,7 @@
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20260928-connect-v19"></script>
-  <script src="app.js?v=20260929-portiq-v26"></script>
+  <script src="app.js?v=20260929-portiq-v27"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>
     <label class="overlay-option" for="overlay-source">Monitor to overlay
