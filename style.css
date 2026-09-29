@@ -1,4 +1,4 @@
-/* connect.gg · monochrome desktop and party space */
+/* Portiq · monochrome desktop and party space */
 :root{color-scheme:dark;--surface:#080808;--line:#242424;--muted:#a3a3a3;--ink:#fff;--ease:cubic-bezier(.22,1,.36,1);font-family:Inter,system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{min-height:100%;background:#000;color:#fff}
