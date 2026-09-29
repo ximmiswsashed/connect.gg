@@ -319,9 +319,11 @@ function connectSockets(current, pairingResult) {
     if (current !== epoch) return;
     const code = event?.code ?? 'unknown';
     if (!authenticated) {
-      failDesktop(opened
+      const reason = opened
         ? `The control WebSocket opened but closed before authentication (code ${code}). Pairing succeeded. Check the launcher's [Control] error, then reopen this monitor.`
-        : `Pairing succeeded, but the control WebSocket could not open (code ${code}). Check the tunnel or network's WebSocket support. Bridge: ${bridgeUrl}. Your saved settings are unchanged.`);
+        : `Pairing succeeded, but the control WebSocket could not open (code ${code}). Check the tunnel or network's WebSocket support. Bridge: ${bridgeUrl}. Your saved settings are unchanged.`;
+      if(controlRetries)return recoverControl(reason);
+      failDesktop(reason);
       return;
     }
     recoverControl(`Control WebSocket closed (code ${code}).`);
@@ -330,9 +332,10 @@ function connectSockets(current, pairingResult) {
     if (current !== epoch) return;
     const now = performance.now();
     if (!authenticated && now - connectStartedAt > 12000) {
-      return failDesktop(opened
+      const reason = opened
         ? 'The control WebSocket opened, but the bridge did not authenticate it within 12 seconds. Check the launcher window.'
-        : 'Pairing succeeded, but opening the control WebSocket timed out. Check the tunnel or network. Your saved settings are unchanged.');
+        : 'Pairing succeeded, but opening the control WebSocket timed out. Check the tunnel or network. Your saved settings are unchanged.';
+      return controlRetries ? recoverControl(reason) : failDesktop(reason);
     }
     if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) startJpegFallback(current);
     else if (hasFrame && now - lastFrameAt > 8000 && mediaMode === 'obs') startJpegFallback(current);
@@ -923,8 +926,8 @@ function failDesktop(message) {
 
 function recoverControl(reason = 'The control connection was interrupted.') {
   if(reconnectControlTimer)return;
-  if(controlRetries++>=5)return failDesktop('Unable to reconnect. ' + reason + ' Check the home launcher and reopen this monitor.');
-  const monitor=activeMonitor, delay=Math.min(5000,500*2**Math.min(controlRetries,3));
+  controlRetries=Math.min(controlRetries+1,10);
+  const monitor=activeMonitor, delay=Math.min(8000,500*2**Math.min(controlRetries,4));
   stopConnections();
   connMessage.textContent='Reconnecting to your computer…';
   connMessage.title=reason;
