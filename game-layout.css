@@ -195,3 +195,69 @@ body.motion-paused .access-backdrop i::after{animation-play-state:paused}
 .monitor-menu{gap:6px;padding:8px;margin-top:6px;border-radius:14px}
 .monitor-menu .pc-action{min-height:38px;padding:9px 11px}
 @media(max-width:600px){.desktop-card{min-height:96px;padding:13px 14px}}
+
+/* Connect.gg steel interface: one material language across access, control and play. */
+:root{--steel-0:#030405;--steel-1:#0b0d0f;--steel-2:#171a1d;--steel-3:#282d32;--steel-line:#454b51;--steel-silver:#cbd0d4;--steel-white:#f5f7f8;--steel-muted:#aeb5ba;--ease:cubic-bezier(.2,.8,.2,1);--surface:var(--steel-1);--line:var(--steel-line);--muted:var(--steel-muted);--ink:var(--steel-white)}
+html,body{background:var(--steel-0);color:var(--steel-white)}
+body{background:radial-gradient(ellipse 80% 55% at 50% -20%,#30363a 0%,#101214 35%,#030405 78%);background-attachment:fixed}
+::selection{background:var(--steel-silver);color:#08090a}
+*{scrollbar-color:#5f666d #0c0e10}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #d9e0e4;outline-offset:3px}
+.access-backdrop{background:radial-gradient(ellipse 60% 60% at 50% 45%,#303438 0%,#0d0f11 45%,#030405 80%)}
+.access-backdrop::before{content:"";position:absolute;inset:0;background:linear-gradient(125deg,transparent 42%,#d7dde309 50%,transparent 57%);opacity:.75}
+.access-backdrop i{border-color:#d6dce01c}
+.access-backdrop i::after{border-top-color:#d6dce047;box-shadow:none}
+#account-page .login-card,.login-card{background:linear-gradient(145deg,#202428 0%,#0d0f11 24%,#08090b 72%,#15181b 100%);border:1px solid #70777c80;border-radius:17px;box-shadow:0 24px 70px #000b,inset 0 1px #e6edf126,inset 0 -1px #000}
+.login-card::before{left:18%;right:18%;background:linear-gradient(90deg,transparent,#dce2e6a8,transparent)}
+.login-card .brand-icon,.dash-brand svg{background:linear-gradient(150deg,#f6f8f9,#aeb5ba 56%,#f1f3f4);color:#0b0e10;border:1px solid #f5f7f8;box-shadow:inset 0 1px #fff,0 5px 16px #0007}
+.brand-name,.dash-brand,.dash-username,.game-title,.card-title{color:var(--steel-white);text-shadow:0 1px 0 #000}
+.brand-tagline,.dash-subtitle,.card-desc,.game-tile p,.login-footer{color:var(--steel-muted)}
+.input-group label,.divider-text,.game-tile label{color:#d2d8dc}
+.input-wrapper input,.game-tile input,.game-tile select,#game-chat-input,.vote-panel select{background:#050607;border:1px solid #60697080;border-radius:10px;color:var(--steel-white);box-shadow:inset 0 1px 4px #0008}
+.input-wrapper input:hover,.game-tile input:hover,.game-tile select:hover{border-color:#aab3b9}
+.input-wrapper input:focus,.game-tile input:focus,.game-tile select:focus{border-color:#dbe1e4;box-shadow:0 0 0 3px #c3ccd423;background:#0c0e10}
+.btn-login{background:linear-gradient(180deg,#edf1f3 0%,#bbc3c8 47%,#8d969d 100%);border:1px solid #e0e6ea;color:#0a0d0f;border-radius:10px;box-shadow:inset 0 1px #fff9,0 5px 16px #0007;font-weight:700}
+.btn-login:hover{background:linear-gradient(180deg,#fff,#d7dee2 60%,#aeb8be);box-shadow:inset 0 1px #fff,0 8px 22px #000a;transform:translateY(-2px)}
+.btn-login:active{box-shadow:inset 0 2px 8px #4b535b7a;transform:translateY(1px)}
+.btn-logout,.pc-action,.side-menu button,.rdp-btn{background:linear-gradient(180deg,#1b1e21,#0d0f11);border:1px solid #555d63;color:#e1e5e8;box-shadow:inset 0 1px #dce2e417}
+.btn-logout:hover,.pc-action:hover,.rdp-btn:hover,.side-menu button:hover{background:linear-gradient(180deg,#363b40,#191c1f);border-color:#aeb8be;color:#fff;box-shadow:inset 0 1px #fff3,0 5px 14px #0007}
+.dash-header{background:linear-gradient(180deg,#1b1e21,#0a0b0d);border-bottom:1px solid #626a7070;box-shadow:inset 0 1px #e4ebef26,0 10px 28px #0006}
+.dash-header-inner{padding-top:17px;padding-bottom:17px}
+.dash-brand svg{padding:4px;border-radius:8px}
+.side-menu{background:linear-gradient(100deg,#111315,#070809 45%,#0b0d0f);border-right:1px solid #626a7066;box-shadow:inset -1px 0 #d3dbe014}
+.side-menu p,.dash-greeting,.signed-in-name{color:#b4bcc1}
+.side-menu button{background:transparent;border-color:transparent;box-shadow:none}
+.side-menu button[aria-current=page]{background:linear-gradient(110deg,#33383c,#15181b);border:1px solid #a3adb46e;box-shadow:inset 0 1px #fff3;color:#fff}
+.side-menu button[aria-current=page]::after{content:"";position:absolute;right:12px;top:50%;width:5px;height:5px;margin-top:-2px;border-radius:50%;background:#dde3e6;box-shadow:0 0 9px #e3e9ec77}
+.side-menu span{color:#9ca5ab}
+#desktop-area>.dash-welcome{border-bottom:1px solid #747d8359}
+.desktop-card,.game-entry .game-tile,#game-room .game-tile{background:linear-gradient(135deg,#262a2e 0%,#111315 28%,#080a0b 75%,#15181a 100%);border:1px solid #737d8370;border-radius:14px;box-shadow:inset 0 1px #dbe2e52c,0 10px 28px #0008}
+.desktop-card::after{background:linear-gradient(115deg,transparent 44%,#dce5eb12 50%,transparent 56%)}
+.desktop-card:hover,.game-entry .game-tile:hover{border-color:#d5dde1b8;box-shadow:inset 0 1px #fff5,0 16px 38px #000a;transform:translateY(-3px)}
+.card-icon{background:linear-gradient(145deg,#575f6561,#141719);border:1px solid #a6b0b665;border-radius:9px;box-shadow:inset 0 1px #fff4}
+.card-arrow{border:1px solid #c7cfd46b;background:linear-gradient(150deg,#d6dde1,#858f96);color:#0b0d0f;box-shadow:inset 0 1px #fff8}
+.desktop-card:hover .card-arrow{background:#e6ecef;border-color:#fff;color:#060708}
+.monitor-menu{background:linear-gradient(155deg,#1c2023,#080a0b 60%);border:1px solid #68717880;box-shadow:inset 0 1px #fff2,0 12px 24px #0008}
+.monitor-menu .pc-action:first-child,.monitor-menu #stop-monitor-overlay{background:linear-gradient(180deg,#1b1e21,#0d0f11);color:#d5dce0}
+.monitor-menu .pc-action:hover{background:#3b4145;border-color:#d7e0e4;color:#fff}
+.game-entry .game-tile,.lobby-grid .game-tile,#game-room .game-tile{border-radius:14px}
+#game-room .role-tile,#game-secret{background:linear-gradient(145deg,#252a2e,#0a0c0d 55%,#1d2225)!important;border-color:#aeb8be65;box-shadow:inset 0 1px #f5f8f938,0 12px 28px #0009}
+#game-secret.imposter{border-color:#e37b7b;color:#ff9b9b}
+#game-chat-log{scrollbar-color:#79838a #0d0f10}
+#game-chat-log p{border:0}
+#game-result:not([hidden]){background:linear-gradient(145deg,#2c3135,#101214);border-color:#a8b1b75c}
+.rdp-header{background:linear-gradient(180deg,#1e2225,#07090a)!important;border-bottom:1px solid #aeb8be69}
+#rdp-info-toggle{background:linear-gradient(180deg,#343b3f,#141719);border:1px solid #818b92;border-top:0;color:#f2f5f6}
+.rdp-frame-container,.rdp-overlay{background:#000}
+.spinner-ring{border-color:#5a6268;border-top-color:#e5ebee}
+dialog{background:linear-gradient(145deg,#24282c,#090b0c 68%,#171b1d)!important;border:1px solid #9aa4aa99!important;border-radius:16px!important;box-shadow:inset 0 1px #f4f7f844,0 28px 75px #000c!important}
+dialog::backdrop{background:#000d;backdrop-filter:none}
+dialog h2{color:#f4f7f8}
+dialog .overlay-option{font-size:13px;color:#d7dee2}
+dialog .overlay-option select{background:#090b0c;border-color:#7f898f;color:#f6f8f9}
+dialog .overlay-option input{accent-color:#c5cdd2}
+#overlay-choice .overlay-actions .pc-action:nth-child(-n+2){background:linear-gradient(180deg,#262b2f,#121518);color:#e8edef;border:1px solid #a5afb675;box-shadow:inset 0 1px #fff2}
+#overlay-choice .overlay-actions .pc-action:nth-child(-n+2):hover{background:linear-gradient(180deg,#454d52,#202529);border-color:#e4eaed}
+#overlay-choice .overlay-actions .pc-action:last-child{background:transparent;border-color:#6a73798a;color:#b8c1c6}
+@media(max-width:850px){.side-menu{box-shadow:16px 0 40px #000a}.dash-header-inner{padding:16px 18px}}
+@media(prefers-reduced-motion:reduce){.access-backdrop i::after,.desktop-card::after{animation:none!important}}
