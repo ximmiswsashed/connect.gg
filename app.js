@@ -506,7 +506,7 @@ function startH264Video(current) {
               }
               if(h264PaintRequest===null)h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
           },
-          error:()=>{h264Failed=true;recover();}
+          error:()=>recover()
         });
         h264Decoder.configure(config);needKey=true;submitted.clear();
         return;
@@ -529,7 +529,7 @@ function startH264Video(current) {
       const timestamp=Math.round(sequence*1000000/videoTargetFps);
       submitted.set(timestamp,{sequence,at:performance.now()});
       h264Decoder.decode(new EncodedVideoChunk({type:key?'key':'delta',timestamp,duration:Math.round(1000000/videoTargetFps),data:new Uint8Array(event.data,5)}));
-    } catch (_) {h264Failed=true;recover();}
+    } catch (_) {recover();}
   };
   socket.onerror=()=>{};
   socket.onclose=()=>{if(active()){videoSocket=null;closeH264Decoder();scheduleVideoReconnect(current);}};
