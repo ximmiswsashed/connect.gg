@@ -1,6 +1,6 @@
-/* TuffyBlud — latest-frame streaming and absolute pointer control, protocol 2. */
+/* Portiq viewer — latest-frame streaming and absolute pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'connect.gg · v14';
+if ($('viewer-build')) $('viewer-build').textContent = 'Portiq';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -29,6 +29,7 @@ let statsAt = 0, painted = 0, receivedBytes = 0, rttMs = null;
 const pressedCodes = new Set();
 const heldMouseButtons = new Set();
 let h264PaintFrame = null, h264PaintRequest = null;
+let h264JitterFrames = [], h264NextPaintAt = 0;
 const computers = {};
 const AUTH_NAME = 'grief';
 const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
@@ -437,8 +438,32 @@ function closeH264Decoder() {
   h264PaintRequest=null;
   if(h264PaintFrame)h264PaintFrame.close();
   h264PaintFrame=null;
+  for(const frame of h264JitterFrames)frame.close();
+  h264JitterFrames=[];h264NextPaintAt=0;
   if(h264Decoder && h264Decoder.state!=='closed')h264Decoder.close();
   h264Decoder=null;
+}
+
+function paintH264Frame(active) {
+  h264PaintRequest=null;
+  if(videoTargetFps===30 && performance.now()<h264NextPaintAt) {
+    h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
+    return;
+  }
+  const frame=videoTargetFps===30?h264JitterFrames.shift():h264PaintFrame;
+  if(videoTargetFps!==30)h264PaintFrame=null;
+  if(!frame)return;
+  try {
+    if(!active())return;
+    if(streamFeed.width!==frame.displayWidth||streamFeed.height!==frame.displayHeight){streamFeed.width=frame.displayWidth;streamFeed.height=frame.displayHeight;}
+    context.drawImage(frame,0,0,streamFeed.width,streamFeed.height);
+    painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
+    if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
+  } finally {frame.close();}
+  if(videoTargetFps===30){
+    h264NextPaintAt=performance.now()+1000/30;
+    if(h264JitterFrames.length)h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
+  }
 }
 
 function startH264Video(current) {
@@ -469,22 +494,17 @@ function startH264Video(current) {
               if(!active()){frame.close();return;}
               const sample=submitted.get(frame.timestamp);
               if(sample){submitted.delete(frame.timestamp);ack(sample.sequence);videoBufferMs=performance.now()-sample.at;}
-              // Decode all references, but present only the newest frame per refresh.
-              // TCP bursts must not queue obsolete canvas work behind mouse input.
-              if(h264PaintFrame)h264PaintFrame.close();
-              h264PaintFrame=frame;
-              if(h264PaintRequest===null)h264PaintRequest=requestAnimationFrame(()=>{
-                h264PaintRequest=null;
-                const latest=h264PaintFrame;h264PaintFrame=null;
-                if(!latest)return;
-                try {
-                  if(!active())return;
-                  if(streamFeed.width!==latest.displayWidth||streamFeed.height!==latest.displayHeight){streamFeed.width=latest.displayWidth;streamFeed.height=latest.displayHeight;}
-                  context.drawImage(latest,0,0,streamFeed.width,streamFeed.height);
-                  painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
-                  if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
-                } finally {latest.close();}
-              });
+              // Keep at most two decoded frames for the 30 Hz HTTPS route.
+              // This masks short arrival bursts without a growing playback delay.
+              if(videoTargetFps===30){
+                h264JitterFrames.push(frame);
+                while(h264JitterFrames.length>2)h264JitterFrames.shift().close();
+                if(!h264NextPaintAt)h264NextPaintAt=performance.now()+1000/30;
+              }else{
+                if(h264PaintFrame)h264PaintFrame.close();
+                h264PaintFrame=frame;
+              }
+              if(h264PaintRequest===null)h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
           },
           error:()=>{h264Failed=true;recover();}
         });
