@@ -98,11 +98,14 @@ function stopAudio() {
 function playAudioFrame(frame) {
   try {
     if(!audioContext||audioContext.state!=='running'||!soundLevel)return;
+    const now=audioContext.currentTime;
+    // Never accumulate delayed audio during a network burst. Dropping a late
+    // packet is less disruptive than replaying old sound over live video.
+    if(audioNextAt>now+.20)return;
     const buffer=audioContext.createBuffer(frame.numberOfChannels,frame.numberOfFrames,frame.sampleRate);
     for(let channel=0;channel<frame.numberOfChannels;channel++)
       frame.copyTo(buffer.getChannelData(channel),{planeIndex:channel,format:'f32-planar'});
-    const now=audioContext.currentTime;
-    if(!audioNextAt||audioNextAt<now||audioNextAt>now+.22)audioNextAt=now+.06;
+    if(!audioNextAt||audioNextAt<now)audioNextAt=now+.06;
     const source=audioContext.createBufferSource();source.buffer=buffer;source.connect(audioGain);
     source.start(audioNextAt);audioNextAt+=buffer.duration;
   }catch(_){}finally{frame.close();}
