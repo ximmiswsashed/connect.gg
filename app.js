@@ -250,7 +250,7 @@ async function openDesktop(num) {
   $('rdp-info-toggle').textContent='▾';
   $('rdp-info-toggle').setAttribute('aria-label','Show controls');
   document.body.classList.add('viewing-desktop');
-  connMessage.textContent = 'Connecting to your home PC…';
+  connMessage.textContent = 'Connecting...';
   rdpConnStatus.textContent = 'Pairing…';
   setOverlayState('connecting');
   try {
@@ -929,7 +929,7 @@ function recoverControl(reason = 'The control connection was interrupted.') {
   controlRetries=Math.min(controlRetries+1,10);
   const monitor=activeMonitor, delay=Math.min(8000,500*2**Math.min(controlRetries,4));
   stopConnections();
-  connMessage.textContent='Reconnecting to your computer…';
+  connMessage.textContent='Connecting...';
   connMessage.title=reason;
   rdpConnStatus.textContent='Reconnecting…';
   reconnectControlTimer=setTimeout(()=>{reconnectControlTimer=null;openDesktop(monitor);},delay);
