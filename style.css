@@ -98,6 +98,11 @@ dialog .pc-action:first-of-type{background:#fff;color:#000;border-color:#fff}
 .mouse-speed-control{display:flex;align-items:center;gap:8px;font-size:11px;white-space:nowrap}
 .mouse-speed-control input{width:100px;accent-color:#fff;cursor:pointer}
 .mouse-speed-control output{min-width:39px;font-variant-numeric:tabular-nums}
+.sound-control{display:flex;align-items:center;gap:8px;font-size:11px;white-space:nowrap}
+.sound-control input{width:100px;accent-color:#fff;cursor:pointer}
+.sound-control output{min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.sound-control .rdp-btn{flex:none;width:32px;height:32px}
+.sound-control svg{width:17px;height:17px}
 .overlay-option{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:16px 0;font-size:12px}
 .overlay-option select{background:#111;color:#fff;border:1px solid #444;border-radius:8px;padding:8px}
 .overlay-option input{width:140px;accent-color:#fff}
@@ -134,11 +139,11 @@ body.viewing-desktop .rdp-overlay{animation:none;transition:none}
 @keyframes arrive{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
 @keyframes mark-in{from{opacity:0;transform:scale(.9) rotate(-8deg)}to{opacity:1;transform:none}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:700px){.dash-header-inner{padding:22px}.dash-main{padding:44px 22px}.desktop-grid{grid-template-columns:1fr;gap:18px}.desktop-card{min-height:250px;padding:26px}.dash-welcome{margin-bottom:30px}.rdp-header{flex-wrap:wrap;padding:8px 12px}.rdp-conn-status{order:3;width:100%;font-size:10px}.login-card{padding:32px 26px;border-radius:26px}}
+@media(max-width:700px){.dash-header-inner{padding:22px}.dash-main{padding:44px 22px}.desktop-grid{grid-template-columns:1fr;gap:18px}.desktop-card{min-height:250px;padding:26px}.dash-welcome{margin-bottom:30px}.rdp-header{flex-wrap:wrap;padding:8px 12px}.rdp-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}.rdp-conn-status{order:3;width:100%;font-size:10px}.login-card{padding:32px 26px;border-radius:26px}}
 @media(max-height:650px){#account-page,#login-page{padding:22px}.login-card{padding-top:26px}.brand{margin-bottom:22px}.brand-icon{margin-bottom:14px}}
 @media(display-mode:fullscreen){body.viewing-desktop .rdp-header{display:none}}
 @media(display-mode:fullscreen){body.viewing-desktop:not(.mouse-locked) .rdp-header{display:flex}}
-@media(max-width:480px){.mouse-speed-control input{width:70px}.rdp-brand{font-size:10px}.mouse-speed-control{gap:4px}}
+@media(max-width:480px){.mouse-speed-control input,.sound-control input{width:70px}.rdp-brand{font-size:10px}.mouse-speed-control,.sound-control{gap:4px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 .dash-header{position:sticky;top:0;z-index:40}.dash-header-inner{max-width:none;padding:20px 32px;gap:16px}.dash-brand{margin-right:auto}.signed-in-name{font-size:12px;color:#aaa}
 .side-menu{position:fixed;z-index:30;left:0;top:78px;bottom:0;width:220px;background:#050505;border-right:1px solid #222;padding:32px 16px}
