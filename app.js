@@ -8,7 +8,6 @@ const errorMsg = $('error-msg'), loginBtn = $('login-btn'), logoutBtn = $('logou
 const rdpOverlay = $('rdp-overlay'), rdpTitle = $('rdp-title');
 const rdpStatusDot = $('rdp-status-dot'), rdpConnStatus = $('rdp-conn-status');
 const streamFeed = $('stream-feed'), streamPlaceholder = $('stream-placeholder'), connMessage = $('conn-message');
-const obsFeed = $('obs-feed');
 if(typeof ResizeObserver!=='undefined'){
   new ResizeObserver(entries=>{const height=entries[0].target.getBoundingClientRect().height;if(height>0)rdpOverlay.style.setProperty('--controls-height',height+'px');}).observe($('rdp-info'));
 }
@@ -16,8 +15,8 @@ const context = streamFeed.getContext('2d', { alpha: false, desynchronized: true
 
 let pairingCode = '', bridgeUrl = '', remoteSession = null;
 let epoch = 0, controlSocket = null, videoSocket = null, controlReady = false, hasFrame = false;
-let mediaReader = null, mediaFallbackTimer = null, mediaMode = null, obsFrameCallback = null;
-let videoBufferMs = null, lastVideoStats = null, statsPending = false, nativeVideo = false;
+let mediaMode = null;
+let videoBufferMs = null;
 let heartbeat = null, watchdog = null, moveTimer = null, pendingMove = null;
 let videoReconnectTimer = null, videoRetries = 0, decodeFailures = 0;
 let videoAttemptAt = 0;
@@ -338,98 +337,16 @@ function connectSockets(current, pairingResult) {
         : 'Pairing succeeded, but opening the control WebSocket timed out. Check the tunnel or network. Your saved settings are unchanged.';
       return controlRetries ? recoverControl(reason) : failDesktop(reason);
     }
-    if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) startJpegFallback(current);
-    else if (hasFrame && now - lastFrameAt > 8000 && mediaMode === 'obs') startJpegFallback(current);
+    if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) restartVideo(current);
     else if (hasFrame && now - lastFrameAt > 8000) restartVideo(current);
     else if (controlReady && now - lastPongAt > 8000) recoverControl('The bridge stopped answering control heartbeats for 8 seconds.');
     else updateStats();
   }, 1000);
 }
 
-function mediaEndpoint(pairingResult) {
-  const url = new URL(bridgeUrl);
-  url.port = String(pairingResult.mediaPort || 8443);
-  url.pathname = pairingResult.mediaPath;
-  url.search = url.hash = '';
-  return url.toString();
-}
-
-function setObsViewport(nativeWidth, nativeHeight, frameWidth = 1920, frameHeight = 1080) {
-  const scale = Math.min(frameWidth / nativeWidth, frameHeight / nativeHeight);
-  sourceViewport = {
-    left:(frameWidth-nativeWidth*scale)/2, top:(frameHeight-nativeHeight*scale)/2,
-    width:nativeWidth*scale, height:nativeHeight*scale, frameWidth, frameHeight
-  };
-}
-
 function startPreferredVideo(current, pairingResult) {
   h264Available = pairingResult?.h264Socket === true && typeof VideoDecoder !== 'undefined' && typeof EncodedVideoChunk !== 'undefined';
-  if (!pairingResult?.mediaPath || typeof MediaMTXWebRTCReader === 'undefined') {
-    startVideo(current); return;
-  }
-  videoAttemptAt = performance.now();
   sourceGeometry = [pairingResult.nativeWidth, pairingResult.nativeHeight];
-  nativeVideo = pairingResult.mediaContent === 'full-frame';
-  setObsViewport(pairingResult.nativeWidth, pairingResult.nativeHeight);
-  let receivedTrack = false;
-  try {
-    mediaReader = new MediaMTXWebRTCReader({
-      url: mediaEndpoint(pairingResult), user:'viewer', pass:pairingCode, token:'',
-      videoOnly:true,
-      // The reader reconnects itself. Give on-demand capture time to open before
-      // falling back; one early 404 must not permanently select JPEG.
-      onError: () => {},
-      onTrack: event => {
-        if (current !== epoch || event.track.kind !== 'video') return;
-        receivedTrack = true;
-        // Remote desktop favors immediacy over a large entertainment-video
-        // buffer. The browser clamps this to its safe supported minimum.
-        // One frame of network variation should not starve the decoder.
-        try { event.receiver.jitterBufferTarget = 20; } catch (_) {}
-        try { event.receiver.playoutDelayHint = 0.02; } catch (_) {}
-        obsFeed.srcObject = new MediaStream([event.track]);
-        obsFeed.play().catch(()=>{});
-      }
-    });
-    obsFeed.onplaying = () => {
-      if (current !== epoch) return;
-      clearTimeout(mediaFallbackTimer); mediaFallbackTimer=null;
-      mediaMode='obs'; hasFrame=true; capturePaused=false; lastFrameAt=performance.now();
-      streamFeed.width=obsFeed.videoWidth||1920; streamFeed.height=obsFeed.videoHeight||1080;
-      sourceViewport = nativeVideo ? null : sourceViewport;
-      if (!nativeVideo) setObsViewport(...sourceGeometry, streamFeed.width, streamFeed.height);
-      streamFeed.style.display='block'; obsFeed.style.display='block';
-      streamPlaceholder.style.display='none'; document.body.classList.add('obs-video');
-      setOverlayState('live'); rdpConnStatus.textContent='Connected';
-      if (typeof obsFeed.cancelVideoFrameCallback === 'function' && obsFrameCallback !== null) obsFeed.cancelVideoFrameCallback(obsFrameCallback);
-      streamFeed.focus({preventScroll:true}); watchObsFrames(current);
-    };
-    // On restrictive networks, move to the same native H.264 via HTTPS promptly.
-    mediaFallbackTimer=setTimeout(()=>{if(current===epoch&&!hasFrame)startJpegFallback(current);},h264Available?5000:15000);
-  } catch (_) { startJpegFallback(current); }
-}
-
-function watchObsFrames(current) {
-  if (current !== epoch || mediaMode !== 'obs') return;
-  if (typeof obsFeed.requestVideoFrameCallback === 'function') {
-    obsFrameCallback=obsFeed.requestVideoFrameCallback(()=>{
-      if(current!==epoch||mediaMode!=='obs')return;
-      painted++;lastFrameAt=performance.now();watchObsFrames(current);
-    });
-  } else {
-    painted++;lastFrameAt=performance.now();
-    obsFrameCallback=setTimeout(()=>watchObsFrames(current),1000/60);
-  }
-}
-
-function startJpegFallback(current) {
-  if(current!==epoch||!controlReady||mediaMode==='jpeg'||mediaMode==='h264')return;
-  clearTimeout(mediaFallbackTimer);mediaFallbackTimer=null;
-  mediaReader?.close();mediaReader=null;mediaMode=null;
-  obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
-  document.body.classList.remove('obs-video');hasFrame=false;sourceViewport=null;
-  streamFeed.style.opacity='';
-  rdpConnStatus.textContent=h264Available?'Connecting in HD…':'Switching to a compatible stream…';
   startVideo(current);
 }
 
@@ -446,7 +363,9 @@ function closeH264Decoder() {
 
 function paintH264Frame(active) {
   h264PaintRequest=null;
-  if(videoTargetFps===30 && performance.now()<h264NextPaintAt) {
+  const framePeriod=1000/30;
+  const paintTime=performance.now();
+  if(videoTargetFps===30 && paintTime+1<h264NextPaintAt) {
     h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
     return;
   }
@@ -461,7 +380,10 @@ function paintH264Frame(active) {
     if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
   } finally {frame.close();}
   if(videoTargetFps===30){
-    h264NextPaintAt=performance.now()+1000/30;
+    // Keep a fixed 30 Hz clock. Resetting from the actual paint time makes a
+    // 60 Hz browser miss the next tick and visibly fall to about 20 FPS.
+    h264NextPaintAt=paintTime-h264NextPaintAt>framePeriod*2
+      ? paintTime+framePeriod : h264NextPaintAt+framePeriod;
     if(h264JitterFrames.length)h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
   }
 }
@@ -666,24 +588,6 @@ async function decodeLatest() {
   } finally { decoding = false; }
 }
 
-async function sampleVideoBuffer() {
-  if (statsPending || !mediaReader?.getStats) return;
-  const reader = mediaReader;
-  statsPending = true;
-  try {
-    const report = await reader.getStats();
-    if (reader !== mediaReader) return;
-    report.forEach(stat => {
-      if (stat.type !== 'inbound-rtp' || stat.kind !== 'video') return;
-      if (lastVideoStats?.id === stat.id) {
-        const count = stat.jitterBufferEmittedCount-lastVideoStats.jitterBufferEmittedCount;
-        if (count > 0) videoBufferMs = Math.max(0, 1000*(stat.jitterBufferDelay-lastVideoStats.jitterBufferDelay)/count);
-      }
-      lastVideoStats = stat;
-    });
-  } catch (_) {} finally { statsPending = false; }
-}
-
 function updateStats() {
   if (!hasFrame || capturePaused || performance.now()<controlNoticeUntil) return;
   const now = performance.now(), seconds = (now - statsAt) / 1000;
@@ -691,11 +595,10 @@ function updateStats() {
   const targetFps = mediaMode==='h264' ? videoTargetFps : 60;
   const fps = Math.min(targetFps, Math.round(painted / seconds));
   const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
-  const resolution = mediaMode==='obs' ? (obsFeed.videoWidth||1920)+'×'+(obsFeed.videoHeight||1080) : streamFeed.width+'×'+streamFeed.height;
-  if (mediaMode === 'obs') sampleVideoBuffer();
-  rdpConnStatus.textContent = (mediaMode==='obs'?'Direct · ':mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
+  const resolution = streamFeed.width+'×'+streamFeed.height;
+  rdpConnStatus.textContent = (mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
     '/'+targetFps+' FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
-    (mediaMode==='jpeg'?' · '+mbps+' Mbps':mediaMode==='h264'?' · '+mbps+' Mbps'+(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms decode'):(videoBufferMs===null?'':' · '+Math.round(videoBufferMs)+' ms video buffer'));
+    ' · '+mbps+' Mbps'+(mediaMode==='h264'&&videoBufferMs!==null?' · '+Math.round(videoBufferMs)+' ms decode':'');
   painted = receivedBytes = 0;
   statsAt = now;
 }
@@ -910,7 +813,6 @@ function stopConnections() {
   clearInterval(heartbeat); clearInterval(watchdog);
   clearTimeout(moveTimer); clearTimeout(pointerTimer); clearTimeout(videoReconnectTimer);
   clearTimeout(reconnectControlTimer);reconnectControlTimer=null;capturePaused=false;
-  clearTimeout(mediaFallbackTimer);mediaFallbackTimer=null;
   heartbeat = watchdog = moveTimer = pointerTimer = videoReconnectTimer = null;
   pendingInput = [];
   pendingMove = waitingFrame = null;
@@ -919,12 +821,8 @@ function stopConnections() {
   pressedCodes.clear();
   heldMouseButtons.clear();
   controlSocket?.close(); videoSocket?.close();
-  mediaReader?.close();mediaReader=null;
   closeH264Decoder();h264Available=false;h264Failed=false;videoTargetFps=60;
-  if(typeof obsFeed.cancelVideoFrameCallback==='function'&&obsFrameCallback!==null)obsFeed.cancelVideoFrameCallback(obsFrameCallback);
-  else clearTimeout(obsFrameCallback);
-  obsFrameCallback=null;mediaMode=null;videoBufferMs=null;lastVideoStats=null;obsFeed.pause();obsFeed.srcObject=null;obsFeed.style.display='none';
-  document.body.classList.remove('obs-video');
+  mediaMode=null;videoBufferMs=null;
   controlSocket = videoSocket = null;
   if (remoteSession) bridgeFetch('/control/release', { session: remoteSession }).catch(() => {});
   remoteSession = null;
@@ -983,3 +881,4 @@ function transitionTo(targetPage) {
 }
 function showError(message) { errorMsg.textContent = message; errorMsg.classList.add('visible'); }
 function hideError() { errorMsg.textContent = ''; errorMsg.classList.remove('visible'); }
+
