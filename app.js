@@ -104,7 +104,6 @@ accountForm.addEventListener('submit',async event=>{
 async function chooseMonitorTwo(monitor = 2) {
   if (!computers[1]) return configurePC(1);
   overlayMonitor = monitor;
-  $('overlay-target').textContent = 'Desktop 1 · Monitor ' + monitor;
   $('overlay-choice').showModal();
 }
 
