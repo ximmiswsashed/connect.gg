@@ -261,3 +261,14 @@ dialog .overlay-option input{accent-color:#fff}
 #overlay-choice .overlay-actions .pc-action:last-child{background:transparent;border-color:#ffffff66;color:#ccc}
 @media(max-width:850px){.side-menu{box-shadow:16px 0 40px #000a}.dash-header-inner{padding:16px 18px}}
 @media(prefers-reduced-motion:reduce){.access-backdrop i::after,.desktop-card::after{animation:none!important}}
+
+/* Compact the optional control strip without covering more of the video. */
+body #rdp-overlay .rdp-header{min-height:38px;padding:4px 10px;gap:8px;flex-wrap:nowrap}
+#rdp-overlay .rdp-brand{gap:6px;font-size:11px}
+#rdp-overlay .rdp-conn-status{order:0;flex:1;min-width:0;width:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+#rdp-overlay .rdp-actions{flex:none;margin-left:auto}
+#rdp-overlay .mouse-speed-control{gap:5px;font-size:10px}
+#rdp-overlay .mouse-speed-control input{width:78px}
+#rdp-overlay .rdp-btn{width:28px;height:28px;border-radius:7px}
+#rdp-overlay #rdp-info-toggle{width:28px;height:18px;font-size:16px;border-radius:0 0 7px 0}
+@media(max-width:650px){#rdp-overlay .rdp-conn-status,#rdp-overlay .mouse-speed-control label{display:none}#rdp-overlay .mouse-speed-control input{width:58px}}
