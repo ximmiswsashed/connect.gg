@@ -29,6 +29,7 @@ const pressedCodes = new Set();
 const heldMouseButtons = new Set();
 let h264PaintFrame = null, h264PaintRequest = null;
 let h264JitterFrames = [], h264NextPaintAt = 0;
+let h264JitterCushionUntil = 0;
 const computers = {};
 const AUTH_NAME = 'grief';
 const AUTH_SALT = 'NxwY3859YbHZ5Dce7iv+Ig==';
@@ -425,6 +426,7 @@ function connectSockets(current, pairingResult) {
       } else if (message.type === 'pong') {
         lastPongAt = performance.now();
         rttMs = Math.max(0, lastPongAt - message.t);
+        if(rttMs>90)h264JitterCushionUntil=lastPongAt+10000;
         if(hasFrame) controlRetries=0;
       }
     } catch (_) { failDesktop('The home bridge sent an invalid response. Restart it and reconnect.'); }
@@ -535,7 +537,10 @@ function startH264Video(current) {
               if(videoTargetFps<60){
                 h264JitterFrames.push(frame);
                 while(h264JitterFrames.length>2)h264JitterFrames.shift().close();
-                if(!h264NextPaintAt)h264NextPaintAt=performance.now();
+                if(!h264NextPaintAt){
+                  const now=performance.now();
+                  h264NextPaintAt=now+(now<h264JitterCushionUntil?1000/videoTargetFps:0);
+                }
               }else{
                 if(h264PaintFrame)h264PaintFrame.close();
                 h264PaintFrame=frame;
@@ -837,7 +842,7 @@ async function lockGameMouse() {
   try {
     try { await streamFeed.requestPointerLock({unadjustedMovement:true}); }
     catch (error) {
-      if (error.name !== 'NotSupportedError') throw error;
+      if (!['NotSupportedError','TypeError'].includes(error?.name)) throw error;
       await streamFeed.requestPointerLock();
     }
   } catch (_) { rdpConnStatus.textContent = 'Mouse lock was blocked by your browser. Click the stream, then press - again.'; }
@@ -904,8 +909,10 @@ streamFeed.addEventListener('wheel', event => {
 }, { passive: false });
 
 document.addEventListener('keydown', event => {
-  if (!controlReady || !hasFrame || capturePaused || document.activeElement !== streamFeed) return;
-  if ((event.code === 'Minus' || event.code === 'NumpadSubtract') && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+  if (!controlReady || !hasFrame || capturePaused) return;
+  const minus=(event.code === 'Minus' || event.code === 'NumpadSubtract' || event.key === '-');
+  const editable=event.target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || '');
+  if (minus && rdpOverlay.classList.contains('active') && !editable && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
     event.preventDefault();
     event.stopPropagation();
     if (!event.repeat) {
@@ -914,6 +921,7 @@ document.addEventListener('keydown', event => {
     }
     return;
   }
+  if (document.activeElement !== streamFeed) return;
   if ((mouseLocked() && event.code === 'Escape') || (event.code === 'Escape' && event.ctrlKey && event.altKey)) {
     if (mouseLocked()) document.exitPointerLock();
     event.preventDefault(); clearHeldInput(); streamFeed.blur(); return;
@@ -962,6 +970,7 @@ function stopConnections() {
   heldMouseButtons.clear();
   controlSocket?.close(); videoSocket?.close();
   closeH264Decoder();h264Available=false;h264Failed=false;h264DecodeErrors=0;videoTargetFps=60;
+  h264JitterCushionUntil=0;
   mediaMode=null;videoBufferMs=null;
   controlSocket = videoSocket = null;
   if (remoteSession) bridgeFetch('/control/release', { session: remoteSession }).catch(() => {});
