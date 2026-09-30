@@ -41,6 +41,7 @@ let overlayLink = null;
 let overlayHeartbeat = null;
 let overlayMonitor = 2, overlayStarting = false, inputSamples = false;
 let h264Available = false, h264Decoder = null, h264Failed = false;
+let h264DecodeErrors = 0;
 let videoTargetFps = 60;
 let mouseSpeed = 1;
 try { const saved = Number(localStorage.getItem('portiq.mouseSpeed.v2')); if (saved >= .1 && saved <= 5) mouseSpeed = saved; } catch (_) {}
@@ -475,14 +476,14 @@ function closeH264Decoder() {
 
 function paintH264Frame(active) {
   h264PaintRequest=null;
-  const framePeriod=1000/30;
+  const framePeriod=1000/videoTargetFps;
   const paintTime=performance.now();
-  if(videoTargetFps===30 && paintTime+1<h264NextPaintAt) {
+  if(videoTargetFps<60 && paintTime+1<h264NextPaintAt) {
     h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
     return;
   }
-  const frame=videoTargetFps===30?h264JitterFrames.shift():h264PaintFrame;
-  if(videoTargetFps!==30)h264PaintFrame=null;
+  const frame=videoTargetFps<60?h264JitterFrames.shift():h264PaintFrame;
+  if(videoTargetFps>=60)h264PaintFrame=null;
   if(!frame)return;
   try {
     if(!active())return;
@@ -491,7 +492,7 @@ function paintH264Frame(active) {
     painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
     if(!hasFrame){hasFrame=true;streamFeed.style.display='block';streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});}
   } finally {frame.close();}
-  if(videoTargetFps===30){
+  if(videoTargetFps<60){
     // Keep a fixed 30 Hz clock. Resetting from the actual paint time makes a
     // 60 Hz browser miss the next tick and visibly fall to about 20 FPS.
     h264NextPaintAt=paintTime-h264NextPaintAt>framePeriod*2
@@ -519,18 +520,19 @@ function startH264Video(current) {
         if(message.type==='error')return recover();
         if(message.type!=='ready')return;
         if(!/^avc1\.[0-9a-f]{6}$/i.test(message.codec)||!(message.width>0&&message.height>0))throw new Error('Invalid codec');
-        videoTargetFps=message.fps===30?30:60;
+        videoTargetFps=[20,30,60].includes(message.fps)?message.fps:60;
         config={codec:message.codec,codedWidth:message.width,codedHeight:message.height,optimizeForLatency:true};
         sourceGeometry=[message.nativeWidth,message.nativeHeight];
         closeH264Decoder();
         h264Decoder=new VideoDecoder({
           output:frame=>{
               if(!active()){frame.close();return;}
+              h264DecodeErrors=0;
               const sample=submitted.get(frame.timestamp);
               if(sample){submitted.delete(frame.timestamp);ack(sample.sequence);videoBufferMs=performance.now()-sample.at;}
               // Keep at most two decoded frames for the 30 Hz HTTPS route.
               // This masks short arrival bursts without a growing playback delay.
-              if(videoTargetFps===30){
+              if(videoTargetFps<60){
                 h264JitterFrames.push(frame);
                 while(h264JitterFrames.length>2)h264JitterFrames.shift().close();
                 if(!h264NextPaintAt)h264NextPaintAt=performance.now();
@@ -540,9 +542,11 @@ function startH264Video(current) {
               }
               if(h264PaintRequest===null)h264PaintRequest=requestAnimationFrame(()=>paintH264Frame(active));
           },
-          error:()=>recover()
+          error:()=>{if(++h264DecodeErrors>=3)h264Failed=true;recover();}
         });
-        h264Decoder.configure(config);needKey=true;submitted.clear();
+        try { h264Decoder.configure(config); }
+        catch (error) { h264Failed=true;throw error; }
+        needKey=true;submitted.clear();
         return;
       }
       if(!config||!h264Decoder||event.data.byteLength<=5)throw new Error('Invalid H.264 frame');
@@ -563,7 +567,7 @@ function startH264Video(current) {
       const timestamp=Math.round(sequence*1000000/videoTargetFps);
       submitted.set(timestamp,{sequence,at:performance.now()});
       h264Decoder.decode(new EncodedVideoChunk({type:key?'key':'delta',timestamp,duration:Math.round(1000000/videoTargetFps),data:new Uint8Array(event.data,5)}));
-    } catch (_) {recover();}
+    } catch (_) {if(!config||!h264Decoder)h264Failed=true;recover();}
   };
   socket.onerror=()=>{};
   socket.onclose=()=>{if(active()){videoSocket=null;closeH264Decoder();scheduleVideoReconnect(current);}};
@@ -573,7 +577,6 @@ function startVideo(current) {
   clearTimeout(videoReconnectTimer);
   videoReconnectTimer = null;
   if (current !== epoch || !controlReady) return;
-  if(videoRetries>=3)h264Failed=true;
   if(h264Available&&!h264Failed)return startH264Video(current);
   closeH264Decoder();mediaMode='jpeg';
   videoAttemptAt = performance.now();
@@ -958,7 +961,7 @@ function stopConnections() {
   pressedCodes.clear();
   heldMouseButtons.clear();
   controlSocket?.close(); videoSocket?.close();
-  closeH264Decoder();h264Available=false;h264Failed=false;videoTargetFps=60;
+  closeH264Decoder();h264Available=false;h264Failed=false;h264DecodeErrors=0;videoTargetFps=60;
   mediaMode=null;videoBufferMs=null;
   controlSocket = videoSocket = null;
   if (remoteSession) bridgeFetch('/control/release', { session: remoteSession }).catch(() => {});
