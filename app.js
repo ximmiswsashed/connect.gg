@@ -535,10 +535,12 @@ function startH264Video(current) {
               // Keep at most two decoded frames for the 30 Hz HTTPS route.
               // This masks short arrival bursts without a growing playback delay.
               if(videoTargetFps<60){
+                const now=performance.now();
+                if(!h264JitterFrames.length && h264NextPaintAt && now-h264NextPaintAt>1000/videoTargetFps*1.5)
+                  h264NextPaintAt=0;
                 h264JitterFrames.push(frame);
                 while(h264JitterFrames.length>2)h264JitterFrames.shift().close();
                 if(!h264NextPaintAt){
-                  const now=performance.now();
                   h264NextPaintAt=now+(now<h264JitterCushionUntil?1000/videoTargetFps:0);
                 }
               }else{
