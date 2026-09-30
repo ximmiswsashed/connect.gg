@@ -1,6 +1,6 @@
-/* Portiq viewer — latest-frame streaming and absolute pointer control, protocol 2. */
+/* Node viewer — paired streaming and native pointer control, protocol 2. */
 const $ = id => document.getElementById(id);
-if ($('viewer-build')) $('viewer-build').textContent = 'Portiq';
+if ($('viewer-build')) $('viewer-build').textContent = 'Node';
 const accountPage = $('account-page'), accountForm = $('account-form');
 const loginPage = $('login-page'), dashPage = $('dashboard-page'), loginForm = $('login-form');
 const pairingCodeIn = $('pairing-code'), bridgeUrlIn = $('bridge-url');
@@ -57,7 +57,7 @@ $('mouse-speed').addEventListener('input', event => setMouseSpeed(event.target.v
 $('mouse-speed-reset').addEventListener('click', () => setMouseSpeed(1));
 
 let audioSocket=null, audioDecoder=null, audioContext=null, audioGain=null, audioNextAt=0;
-let soundLevel=.7, soundBeforeMute=.7;
+let soundLevel=.7, soundBeforeMute=.7, audioRetryTimer=null, audioRetries=0, audioUnavailable=false;
 try { const saved=localStorage.getItem('portiq.soundLevel.v1');if(saved!==null){const level=Number(saved);if(level>=0&&level<=1)soundLevel=level;} } catch(_) {}
 function setSoundLevel(value) {
   const number=Number(value);if(!Number.isFinite(number))return;
@@ -79,6 +79,8 @@ function primeAudio() {
   try {
     if(!audioContext||audioContext.state==='closed'){
       audioContext=new AudioContext({latencyHint:'interactive'});
+    }
+    if(!audioGain){
       audioGain=audioContext.createGain();audioGain.gain.value=soundLevel;
       audioGain.connect(audioContext.destination);
     }
@@ -87,13 +89,16 @@ function primeAudio() {
 }
 setSoundLevel(soundLevel);
 $('sound-level').addEventListener('input',event=>setSoundLevel(Number(event.target.value)/100));
-$('sound-toggle').addEventListener('click',()=>setSoundLevel(soundLevel?0:soundBeforeMute));
+$('sound-toggle').addEventListener('click',()=>{if(audioUnavailable){audioRetries=0;audioUnavailable=false;setSoundLevel(soundLevel||soundBeforeMute);}else setSoundLevel(soundLevel?0:soundBeforeMute);});
 
 function stopAudio() {
+  clearTimeout(audioRetryTimer);audioRetryTimer=null;audioRetries=0;audioUnavailable=false;
   audioSocket?.close();audioSocket=null;
   if(audioDecoder&&audioDecoder.state!=='closed')audioDecoder.close();audioDecoder=null;
   audioNextAt=0;
-  if(audioContext){audioContext.close().catch(()=>{});audioContext=null;audioGain=null;}
+  // Keep the user-activated context across asynchronous pairing and reconnects.
+  // Disconnect the old gain so already scheduled audio cannot leak into a new session.
+  if(audioGain){audioGain.disconnect();audioGain=null;}
 }
 function playAudioFrame(frame) {
   try {
@@ -111,6 +116,7 @@ function playAudioFrame(frame) {
   }catch(_){}finally{frame.close();}
 }
 function startAudio(current) {
+  clearTimeout(audioRetryTimer);audioRetryTimer=null;
   if(typeof AudioDecoder==='undefined'||typeof EncodedAudioChunk==='undefined'||typeof AudioContext==='undefined')return;
   primeAudio();
   const socket=audioSocket=makeSocket('/control/audio');socket.binaryType='arraybuffer';
@@ -130,12 +136,22 @@ function startAudio(current) {
         return;
       }
       if(!audioDecoder||audioDecoder.state!=='configured')return;
+      audioRetries=0;audioUnavailable=false;
+      $('sound-value').textContent=Math.round(soundLevel*100)+'%';
+      $('sound-toggle').title='Mute sound';$('sound-toggle').setAttribute('aria-label','Mute sound');
       if(audioDecoder.decodeQueueSize>10){audioDecoder.reset();audioDecoder.configure({codec:'opus',sampleRate:48000,numberOfChannels:2});audioNextAt=0;}
       audioDecoder.decode(new EncodedAudioChunk({type:'key',timestamp:sequence++*20000,data:event.data}));
     }catch(_){socket.close();}
   };
   socket.onerror=()=>{};
-  socket.onclose=()=>{if(active()){audioSocket=null;if(audioDecoder&&audioDecoder.state!=='closed')audioDecoder.close();audioDecoder=null;}};
+  socket.onclose=()=>{if(active()){
+    audioSocket=null;if(audioDecoder&&audioDecoder.state!=='closed')audioDecoder.close();audioDecoder=null;
+    audioUnavailable=true;$('sound-value').textContent='Retry';
+    $('sound-toggle').title='Retry sound';$('sound-toggle').setAttribute('aria-label','Retry sound');
+    if(soundLevel&&controlReady&&audioRetries<3)audioRetryTimer=setTimeout(()=>{
+      audioRetryTimer=null;if(current===epoch&&remoteSession&&controlReady&&soundLevel&&!audioSocket)startAudio(current);
+    },2000*2**audioRetries++);
+  }};
 }
 
 function fromBase64(value) { return Uint8Array.from(atob(value), c => c.charCodeAt(0)); }
@@ -191,8 +207,8 @@ async function chooseMonitorTwo(monitor = 2) {
 }
 
 async function acceptMonitorTwo(useOverlay) {
-  primeAudio();
   if (overlayStarting) return;
+  if(soundLevel)primeAudio();
   const targetMonitor = overlayMonitor;
   $('overlay-choice').close();
   if (!useOverlay) { await stopMonitorOverlay(); return openMonitor(1,targetMonitor); }
@@ -288,7 +304,6 @@ function handleDesktopClick(num) {
 }
 
 async function openMonitor(pc, monitor) {
-  primeAudio();
   if (!computers[pc]) return configurePC(pc);
   closeOverlay();
   selectedPC = pc;
@@ -325,6 +340,9 @@ async function bridgeFetch(path, body, base = bridgeUrl) {
 
 async function openDesktop(num) {
   closeOverlay();
+  // Create/resume audio inside the monitor click, after teardown. Creating it
+  // before closeOverlay used to immediately close the user-activated context.
+  if(soundLevel)primeAudio();
   activeMonitor = num;
   const current = epoch, base = bridgeUrl;
   rdpTitle.textContent = 'Desktop ' + selectedPC + ' · Monitor ' + num;
@@ -506,7 +524,7 @@ function startH264Video(current) {
               if(videoTargetFps===30){
                 h264JitterFrames.push(frame);
                 while(h264JitterFrames.length>2)h264JitterFrames.shift().close();
-                if(!h264NextPaintAt)h264NextPaintAt=performance.now()+1000/30;
+                if(!h264NextPaintAt)h264NextPaintAt=performance.now();
               }else{
                 if(h264PaintFrame)h264PaintFrame.close();
                 h264PaintFrame=frame;
