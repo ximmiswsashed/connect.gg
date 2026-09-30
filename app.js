@@ -442,7 +442,7 @@ function connectSockets(current, pairingResult) {
     }
     if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) restartVideo(current);
     else if (hasFrame && now - lastFrameAt > 8000) restartVideo(current);
-    else if (controlReady && now - lastPongAt > 8000) recoverControl('The bridge stopped answering control heartbeats for 8 seconds.');
+    else if (controlReady && now - lastPongAt > 20000) recoverControl('The bridge stopped answering control heartbeats for 20 seconds.');
     else updateStats();
   }, 1000);
 }
