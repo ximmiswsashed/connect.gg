@@ -740,19 +740,43 @@ function sendControl(message) {
   } else if (message.kind === 'pointer' && message.action === 'move' && pendingInput.at(-1)?.action === 'move') {
     pendingInput[pendingInput.length - 1] = message;
   } else { pendingInput.push(message); }
+  if (pendingInput.length > 64) compactPendingInput();
   // At high mouse polling rates, one message per sample can overwhelm the
   // browser and Python. Batch for at most 4 ms, retaining each displacement.
-  if(message.samples && pendingInput.at(-1).samples.length<32) {
+  if(message.samples && pendingInput.at(-1)?.samples?.length<32) {
     if(!moveTimer)moveTimer=setTimeout(flushInput,4);
   } else flushInput();
+}
+
+function compactPendingInput() {
+  // Only do this after a network stall. Keep clicks and keys in order while
+  // preserving the total relative displacement of queued mouse movement.
+  const compact = [];
+  const displacement = message => message.samples
+    ? message.samples.reduce((sum, sample) => [sum[0] + sample[0], sum[1] + sample[1]], [0, 0])
+    : [message.deltaX || 0, message.deltaY || 0];
+  for (const message of pendingInput) {
+    const previous = compact.at(-1);
+    if (message.kind === 'pointer' && message.action === 'move-relative') {
+      const [deltaX, deltaY] = displacement(message);
+      if (previous?.kind === 'pointer' && previous.action === 'move-relative') {
+        previous.deltaX += deltaX;
+        previous.deltaY += deltaY;
+      } else compact.push({kind:'pointer', action:'move-relative', deltaX, deltaY});
+    } else if (message.kind === 'pointer' && message.action === 'move' && previous?.kind === 'pointer' && previous.action === 'move') {
+      compact[compact.length - 1] = message;
+    } else compact.push(message);
+  }
+  pendingInput = compact;
 }
 
 function flushInput() {
   clearTimeout(moveTimer);
   moveTimer = null;
   if (!controlReady || controlSocket?.readyState !== WebSocket.OPEN) return;
+  if (pendingInput.length > 64) compactPendingInput();
   if (pendingInput.length > 256 || controlSocket.bufferedAmount > 65536) {
-    return failDesktop('Input connection is congested. Reopen the desktop to reconnect.');
+    return recoverControl('Input connection is congested. Reconnecting...');
   }
   while (pendingInput.length && controlSocket.bufferedAmount < 4096) {
     controlSocket.send(JSON.stringify(pendingInput.shift()));
