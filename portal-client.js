@@ -1,4 +1,4 @@
-/* Portiq accounts and Imposter. All authorization/roles live on the server. */
+/* Node accounts and Imposter. All authorization/roles live on the server. */
 window.ConnectPortal = (() => {
   const el=id=>document.getElementById(id);
   let token='',user=null,registering=false,room=null,revealed=false,poll=null,pollBusy=false,generation=0,refreshFailures=0,connectionNotice=false;
@@ -117,6 +117,7 @@ window.ConnectPortal = (() => {
   function logout(){generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
+    el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
     el('account-toggle').textContent=registering?'Already a member? Sign in':'New here? Create an account';
     el('account-password').autocomplete=registering?'new-password':'current-password';
     el('account-password').minLength=registering?8:1;el('account-error').classList.remove('visible');
@@ -163,3 +164,4 @@ window.ConnectPortal = (() => {
   document.addEventListener('visibilitychange',()=>document.body.classList.toggle('motion-paused',document.hidden));
   return {login,logout,view};
 })();
+
