@@ -326,13 +326,19 @@ async function bridgeFetch(path, body, base = bridgeUrl) {
     });
     if (!response.ok) {
       if (response.status === 401) throw new Error('Account or pairing code rejected. Check this desktop’s saved pairing code against its launcher; sign in again if your account changed.');
-      if ([502,503,504].includes(response.status)) throw new Error('The tunnel responded, but its home bridge is unavailable. Close the old launcher and run the updated launcher on that PC. Leave its window open.');
+      if (response.status >= 500) {
+        const failure = new Error('The tunnel responded, but its home bridge is temporarily unavailable.');
+        failure.retryable = true;
+        throw failure;
+      }
       throw new Error('Bridge returned ' + response.status + '. Check the selected monitor and restart the updated bridge.');
     }
     return await response.json();
   } catch (error) {
     if (error.name === 'AbortError' || error instanceof TypeError) {
-      throw new Error('Cannot reach ' + base + '. Keep that PC’s launcher open and compare this address with its WEBSITE BRIDGE ADDRESS. Open ' + base + '/control/health in a new tab: if it also fails, check the launcher/Tailscale or your network. Your saved pairing code has not been erased.');
+      const failure = new Error('Cannot reach ' + base + '. Retrying when the connection returns.');
+      failure.retryable = true;
+      throw failure;
     }
     throw error;
   } finally { clearTimeout(timer); }
@@ -368,7 +374,12 @@ async function openDesktop(num) {
     }
     statsAt = performance.now();
     connectSockets(current, result);
-  } catch (error) { if (current === epoch) { if(controlRetries>0) recoverControl(error.message); else failDesktop(error.message); } }
+  } catch (error) {
+    if (current === epoch) {
+      if (error.retryable) recoverControl(error.message);
+      else failDesktop(error.message);
+    }
+  }
 }
 
 function makeSocket(path) {
@@ -425,9 +436,7 @@ function connectSockets(current, pairingResult) {
       const reason = opened
         ? `The control WebSocket opened but closed before authentication (code ${code}). Pairing succeeded. Check the launcher's [Control] error, then reopen this monitor.`
         : `Pairing succeeded, but the control WebSocket could not open (code ${code}). Check the tunnel or network's WebSocket support. Bridge: ${bridgeUrl}. Your saved settings are unchanged.`;
-      if(controlRetries)return recoverControl(reason);
-      failDesktop(reason);
-      return;
+      return recoverControl(reason);
     }
     recoverControl(`Control WebSocket closed (code ${code}).`);
   };
@@ -438,7 +447,7 @@ function connectSockets(current, pairingResult) {
       const reason = opened
         ? 'The control WebSocket opened, but the bridge did not authenticate it within 12 seconds. Check the launcher window.'
         : 'Pairing succeeded, but opening the control WebSocket timed out. Check the tunnel or network. Your saved settings are unchanged.';
-      return controlRetries ? recoverControl(reason) : failDesktop(reason);
+      return recoverControl(reason);
     }
     if (!hasFrame && videoAttemptAt && now - videoAttemptAt > 15000) restartVideo(current);
     else if (hasFrame && now - lastFrameAt > 8000) restartVideo(current);
@@ -951,13 +960,30 @@ function failDesktop(message) {
 function recoverControl(reason = 'The control connection was interrupted.') {
   if(reconnectControlTimer)return;
   controlRetries=Math.min(controlRetries+1,10);
-  const monitor=activeMonitor, delay=Math.min(8000,500*2**Math.min(controlRetries,4));
+  const monitor=activeMonitor, delay=Math.min(30000,750*2**Math.min(controlRetries,6));
   stopConnections();
   connMessage.textContent='Connecting...';
   connMessage.title=reason;
   rdpConnStatus.textContent='Reconnecting…';
   reconnectControlTimer=setTimeout(()=>{reconnectControlTimer=null;openDesktop(monitor);},delay);
 }
+
+function retryPendingConnection() {
+  if (!rdpOverlay.classList.contains('active')) return;
+  if (reconnectControlTimer) {
+    clearTimeout(reconnectControlTimer);
+    reconnectControlTimer=null;
+    openDesktop(activeMonitor);
+  } else if (controlReady && performance.now() - lastPongAt > 20000) {
+    recoverControl('The connection was stale after the browser resumed.');
+  } else if (controlReady && hasFrame && performance.now() - lastFrameAt > 8000) {
+    restartVideo(epoch);
+  }
+}
+window.addEventListener('online', retryPendingConnection);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) retryPendingConnection();
+});
 
 function closeOverlay() {
   stopConnections();
