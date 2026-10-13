@@ -98,11 +98,13 @@ window.ConnectPortal = (() => {
     }catch(error){message(error.message);}
   }
   function view(which){
-    el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';
+    el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
+    el('nav-youtube').setAttribute('aria-current',which==='youtube'?'page':'false');
+    window.NodeYouTube?.onNavigate(which);
   }
   async function login(name,password) {
     if(registering){await api('/api/register',{name,password});}
@@ -123,7 +125,7 @@ window.ConnectPortal = (() => {
     el('account-password').minLength=registering?8:1;el('account-error').classList.remove('visible');
   });
   el('menu-toggle').addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');el('menu-toggle').setAttribute('aria-expanded',String(open));});
-  el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));
+  el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));el('nav-youtube').addEventListener('click',()=>view('youtube'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
