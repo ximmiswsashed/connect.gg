@@ -6,6 +6,7 @@ window.NodeYouTube = (() => {
   const keyStatus = el('youtube-key-status'), error = el('youtube-error'), status = el('youtube-status');
   const results = el('youtube-results'), more = el('youtube-more');
   const stage = el('youtube-stage'), player = el('youtube-player'), open = el('youtube-open');
+  const area = el('youtube-area'), menu = el('youtube-menu');
   const storageKey = 'node.youtube.apiKey.v1';
   let currentId = '', lastQuery = '', nextPage = '', loading = false, searchVersion = 0;
   const validId = id => /^[A-Za-z0-9_-]{11}$/.test(id || '');
@@ -14,13 +15,29 @@ window.NodeYouTube = (() => {
   const showError = message => { error.textContent = message; error.hidden = !message; };
   const setStatus = message => { status.textContent = message; };
   const stopVideo = () => { player.src = 'about:blank'; };
-  const play = id => {
+  const home = () => {
+    area.classList.remove('yt-watching', 'yt-menu-collapsed');
+    menu.setAttribute('aria-expanded', 'true');
+    stage.hidden = true;
+    currentId = '';
+    stopVideo();
+    el('youtube-home').setAttribute('aria-current', 'page');
+    el('youtube-all').setAttribute('aria-pressed', 'true');
+    for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.setAttribute('aria-pressed', 'false');
+  };
+  const play = (id, title, channel) => {
     if (!validId(id)) return;
     currentId = id;
     stage.hidden = false;
+    area.classList.add('yt-watching', 'yt-menu-collapsed');
+    menu.setAttribute('aria-expanded', 'false');
+    el('youtube-video-title').textContent = title;
+    el('youtube-video-channel').textContent = channel;
+    player.title = title;
     open.href = `https://www.youtube.com/watch?v=${id}`;
     player.src = embedUrl(id);
-    stage.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    stage.scrollIntoView?.({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
   };
   const addResult = item => {
     const id = item?.id?.videoId;
@@ -32,7 +49,7 @@ window.NodeYouTube = (() => {
     button.setAttribute('aria-label', `Play ${title}`);
     const image = document.createElement('img');
     image.className = 'youtube-thumb';
-    image.src = `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+    image.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
     image.alt = '';
     image.loading = 'lazy';
     const heading = document.createElement('span');
@@ -42,7 +59,7 @@ window.NodeYouTube = (() => {
     channel.className = 'youtube-channel';
     channel.textContent = String(item.snippet?.channelTitle || 'YouTube');
     button.append(image, heading, channel);
-    button.addEventListener('click', () => play(id));
+    button.addEventListener('click', () => play(id, title, channel.textContent));
     results.append(button);
     return true;
   };
@@ -104,11 +121,15 @@ window.NodeYouTube = (() => {
     settings.open = true;
     setStatus('Add your YouTube Data API key under Search setup to begin.');
   });
-  form.addEventListener('submit', event => {
-    event.preventDefault();
+  const searchFor = query => {
     if (loading) return;
-    lastQuery = queryInput.value.trim();
+    lastQuery = query.trim();
     if (!lastQuery) return;
+    queryInput.value = lastQuery;
+    home();
+    el('youtube-all').setAttribute('aria-pressed', 'false');
+    el('youtube-home').setAttribute('aria-current', 'false');
+    for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.setAttribute('aria-pressed', String(button.dataset.youtubeQuery === lastQuery));
     results.replaceChildren();
     nextPage = '';
     more.hidden = true;
@@ -116,7 +137,18 @@ window.NodeYouTube = (() => {
     currentId = '';
     stopVideo();
     search();
+  };
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    searchFor(queryInput.value);
   });
+  el('youtube-home').addEventListener('click', home);
+  el('youtube-brand').addEventListener('click', home);
+  el('youtube-all').addEventListener('click', home);
+  el('youtube-back').addEventListener('click', home);
+  menu.addEventListener('click', () => { const collapsed = area.classList.toggle('yt-menu-collapsed'); menu.setAttribute('aria-expanded', String(!collapsed)); });
+  el('youtube-setup-toggle').addEventListener('click', () => { settings.open = !settings.open; if (settings.open) keyInput.focus(); });
+  for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.addEventListener('click', () => searchFor(button.dataset.youtubeQuery));
   more.addEventListener('click', () => { if (nextPage) search(true); });
   return {
     onNavigate(which) {

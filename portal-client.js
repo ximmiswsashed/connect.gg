@@ -100,6 +100,7 @@ window.ConnectPortal = (() => {
   function view(which){
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     document.body.classList.toggle('playing-imposter',which==='game');
+    document.body.classList.toggle('browsing-youtube',which==='youtube');
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
