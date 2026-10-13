@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261013-youtube-v1">
+  <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -246,16 +246,20 @@
         </div>
       </section>
       <section id="youtube-area" class="youtube-area" hidden aria-labelledby="youtube-title">
-        <div class="dash-welcome"><h2 id="youtube-title" class="dash-title">YouTube</h2><p class="dash-subtitle">Paste a video link to watch it here.</p></div>
-        <form id="youtube-form" class="youtube-form">
-          <label for="youtube-link">Video link</label>
-          <div class="youtube-input-row"><input id="youtube-link" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="youtube.com/watch?v=…" required><button class="btn-login" type="submit">Play video</button></div>
-          <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
+        <div class="dash-welcome"><h2 id="youtube-title" class="dash-title">YouTube</h2><p class="dash-subtitle">Search for videos, then choose one to watch.</p></div>
+        <form id="youtube-form" class="youtube-form" role="search">
+          <label for="youtube-query">Search videos</label>
+          <div class="youtube-input-row"><input id="youtube-query" type="search" autocomplete="off" spellcheck="false" maxlength="100" placeholder="Search for siege, music, tutorials…" required><button id="youtube-search" class="btn-login" type="submit">Search</button></div>
         </form>
+        <details id="youtube-settings" class="youtube-settings"><summary>Search setup</summary><div class="youtube-settings-body"><p>Search uses the official YouTube Data API. Add a browser-restricted API key to enable results. The key stays in this browser and is sent to Google when you search.</p><label for="youtube-api-key">YouTube Data API key</label><div class="youtube-key-row"><input id="youtube-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"><button id="youtube-save-key" type="button" class="pc-action">Save key</button><button id="youtube-remove-key" type="button" class="pc-action">Remove</button></div><a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener noreferrer">How to get an API key</a><p id="youtube-key-status" role="status"></p></div></details>
+        <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
+        <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
         <div id="youtube-stage" class="youtube-stage" hidden>
           <div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
           <div class="youtube-foot"><span>Some videos cannot play in an embedded player.</span><a id="youtube-open" class="pc-action" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube</a></div>
         </div>
+        <div id="youtube-results" class="youtube-results" aria-label="YouTube search results"></div>
+        <button id="youtube-more" class="pc-action youtube-more" type="button" hidden>Load more videos</button>
         <p class="youtube-note">School account and network restrictions still apply.</p>
       </section>
     </main>
@@ -307,7 +311,7 @@
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20261013-youtube-v1"></script>
-  <script src="youtube.js?v=20261013-youtube-v1"></script>
+  <script src="youtube.js?v=20261013-youtube-v2"></script>
   <script src="app.js?v=20260930-school-v6"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>
