@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260930-node-v1">
+  <link rel="stylesheet" href="style.css?v=20261013-youtube-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -135,6 +135,7 @@
         <nav id="side-menu" class="side-menu" aria-label="Main menu">
           <button id="nav-computers" type="button" aria-current="page">Computers</button>
           <button id="nav-game" type="button">Imposter</button>
+          <button id="nav-youtube" type="button">YouTube</button>
         </nav>
         <button id="menu-toggle" class="btn-logout" aria-controls="side-menu" aria-expanded="false">Menu</button>
         <span id="signed-in-name" class="signed-in-name"></span>
@@ -244,6 +245,19 @@
           <section class="vote-panel"><button id="game-vote-ready" class="pc-action" hidden>Ready to vote</button><div id="game-voting" hidden><label for="game-vote-choice">Who is the imposter?</label><select id="game-vote-choice"></select><button id="game-vote-lock" class="pc-action">Lock in vote</button><p id="game-vote-status"></p></div><p id="game-result" role="status" hidden></p></section>
         </div>
       </section>
+      <section id="youtube-area" class="youtube-area" hidden aria-labelledby="youtube-title">
+        <div class="dash-welcome"><h2 id="youtube-title" class="dash-title">YouTube</h2><p class="dash-subtitle">Paste a video link to watch it here.</p></div>
+        <form id="youtube-form" class="youtube-form">
+          <label for="youtube-link">Video link</label>
+          <div class="youtube-input-row"><input id="youtube-link" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="youtube.com/watch?v=…" required><button class="btn-login" type="submit">Play video</button></div>
+          <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
+        </form>
+        <div id="youtube-stage" class="youtube-stage" hidden>
+          <div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+          <div class="youtube-foot"><span>Some videos cannot play in an embedded player.</span><a id="youtube-open" class="pc-action" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube</a></div>
+        </div>
+        <p class="youtube-note">School account and network restrictions still apply.</p>
+      </section>
     </main>
 
   </section>
@@ -293,6 +307,7 @@
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20260930-node-v1"></script>
+  <script src="youtube.js?v=20261013-youtube-v1"></script>
   <script src="app.js?v=20260930-school-v6"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>
