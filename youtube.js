@@ -7,6 +7,12 @@ window.NodeYouTube = (() => {
   const results = el('youtube-results'), more = el('youtube-more');
   const stage = el('youtube-stage'), player = el('youtube-player'), open = el('youtube-open');
   const area = el('youtube-area'), menu = el('youtube-menu');
+  if (typeof ResizeObserver === 'function') {
+    new ResizeObserver(entries => {
+      const height = entries[0]?.target.getBoundingClientRect().height;
+      if (height > 0) document.documentElement.style.setProperty('--yt-toolbar-height', `${height}px`);
+    }).observe(area.querySelector('.yt-topbar'));
+  }
   const storageKey = 'node.youtube.apiKey.v1';
   let currentId = '', lastQuery = '', nextPage = '', loading = false, searchVersion = 0;
   const validId = id => /^[A-Za-z0-9_-]{11}$/.test(id || '');

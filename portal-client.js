@@ -101,6 +101,11 @@ window.ConnectPortal = (() => {
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.toggle('browsing-youtube',which==='youtube');
+    if(which==='youtube'){
+      document.body.classList.remove('node-menu-hidden');
+      el('node-panel-toggle').setAttribute('aria-expanded','true');
+      el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
+    }
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
@@ -126,6 +131,11 @@ window.ConnectPortal = (() => {
     el('account-password').minLength=registering?8:1;el('account-error').classList.remove('visible');
   });
   el('menu-toggle').addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');el('menu-toggle').setAttribute('aria-expanded',String(open));});
+  el('node-panel-toggle').addEventListener('click',()=>{
+    const hidden=document.body.classList.toggle('node-menu-hidden');
+    el('node-panel-toggle').setAttribute('aria-expanded',String(!hidden));
+    el('node-panel-toggle').setAttribute('aria-label',hidden?'Show Node menu':'Hide Node menu');
+  });
   el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));el('nav-youtube').addEventListener('click',()=>view('youtube'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
