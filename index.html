@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
   <link rel="stylesheet" href="youtube.css?v=20261014-center-v3">
   <link rel="stylesheet" href="node-nav.css?v=20261014-player-v2">
+  <link rel="stylesheet" href="imposter.css?v=20261014-game-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -230,14 +231,14 @@
         <div class="dash-welcome"><h2 class="game-title">Find the imposter.</h2><p class="dash-subtitle">One secret word. One person bluffing. Who will you trust?</p></div>
         <p id="game-message" class="game-message" role="status" aria-live="polite"></p>
         <div id="game-entry" class="game-entry">
-          <article class="game-tile"><h3>Start a lobby</h3><p>Pick a topic and invite your friends. 3–16 players.</p><button id="game-create" class="btn-login">Create lobby</button></article>
+          <article class="game-tile game-create-tile"><svg class="imposter-mark" viewBox="0 0 96 64" aria-hidden="true"><path d="M5 32C26 1 70 1 91 32C70 63 26 63 5 32Z"/><path d="M48 15V49M31 32H65"/><circle cx="48" cy="32" r="17"/></svg><h3>Trust your instincts.<br>Not your friends.</h3><p>One word. One person bluffing.<br>Pick a topic and bring 3–16 players.</p><button id="game-create" class="btn-login">Create lobby</button></article>
           <article class="game-tile"><h3>Have a code?</h3><form id="game-join-form"><label for="game-code">Lobby code</label><input id="game-code" autocomplete="off" maxlength="6" minlength="6" placeholder="ABC123" required><button class="btn-login" type="submit">Join lobby</button></form></article>
         </div>
         <div id="game-room" hidden>
-          <div class="lobby-header"><div><span class="dash-greeting">LOBBY CODE</span><h3 id="lobby-code"></h3></div><button id="game-leave" class="btn-logout">Leave lobby</button></div>
+          <div class="lobby-header"><div><h3 id="lobby-code" aria-label="Lobby code"></h3><span id="game-phase-label">Lobby open</span></div><button id="game-leave" class="btn-logout">Leave lobby</button></div>
           <p id="game-instructions" class="dash-subtitle"></p>
           <div class="lobby-grid"><section class="game-tile"><h3>Who's in?</h3><ul id="game-players"></ul><label for="game-topic">Topic</label><select id="game-topic"></select><button id="game-start" class="btn-login">Start round</button><button id="game-end" class="pc-action" hidden>End round</button></section>
-          <section class="game-tile role-tile"><div id="game-countdown" role="status" aria-live="assertive" hidden></div><div id="game-card" hidden><p class="dash-greeting">JUST FOR YOU</p><h3 id="game-player-name"></h3><button id="game-reveal" class="btn-login">Reveal</button><p id="game-secret" hidden aria-live="polite"></p></div></section></div>
+          <section class="game-tile role-tile"><div id="game-role-idle"><svg class="role-seal" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4L40 12V25C40 35 30 42 24 44C18 42 8 35 8 25V12Z"/><path d="M18 24H30M24 18V30"/></svg><h3 id="game-stage-title">Your secret awaits.</h3><p id="game-stage-copy">When the round starts, only you can see your card.</p></div><div id="game-countdown" role="status" aria-live="assertive" hidden></div><div id="game-card" hidden><svg class="role-seal" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4L40 12V25C40 35 30 42 24 44C18 42 8 35 8 25V12Z"/><path d="M18 24H30M24 18V30"/></svg><h3 id="game-player-name"></h3><button id="game-reveal" class="btn-login" aria-expanded="false" aria-controls="game-secret">Reveal</button><p id="game-secret" hidden aria-live="polite"></p><p class="role-privacy">Keep this between us.</p></div></section></div>
           <section class="game-tile lobby-chat" aria-labelledby="game-chat-title">
             <h3 id="game-chat-title">Lobby chat</h3>
             <p id="game-chat-empty" class="dash-subtitle">Say hello or share a clue. Keep your secret word to yourself.</p>
@@ -329,14 +330,16 @@
         </div>
       </div>
       <!-- Live video feed -->
+      <video id="rtc-feed" autoplay muted playsinline aria-hidden="true" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;background:black;"></video>
       <canvas id="stream-feed" tabindex="0" aria-label="Remote desktop. Click to control; press minus to lock or unlock the mouse. Ctrl+Alt+Escape releases keyboard focus." title="Press - to lock or unlock the mouse" style="display:none;"></canvas>
     </div>
   </div>
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
-  <script src="portal-client.js?v=20261014-nav-v1"></script>
+  <script src="portal-client.js?v=20261014-game-v1"></script>
   <script src="youtube.js?v=20261014-player-v2"></script>
-  <script src="app.js?v=20260930-school-v6"></script>
+  <script src="rtc-viewer.js?v=20261014-rtc-v1"></script>
+  <script src="app.js?v=20261014-rtc-v1"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>
     <label class="overlay-option" for="overlay-source">Monitor to overlay
@@ -356,4 +359,3 @@
   </dialog>
 </body>
 </html>
-

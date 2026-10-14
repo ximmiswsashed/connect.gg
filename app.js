@@ -16,6 +16,8 @@ const context = streamFeed.getContext('2d', { alpha: false, desynchronized: true
 let pairingCode = '', bridgeUrl = '', remoteSession = null;
 let epoch = 0, controlSocket = null, videoSocket = null, controlReady = false, hasFrame = false;
 let mediaMode = null;
+let rtcViewer=null, rtcSound=null, rtcRoute='WebRTC';
+const rtcCooldowns=new Map();
 let videoBufferMs = null;
 let heartbeat = null, watchdog = null, moveTimer = null, pendingMove = null;
 let videoReconnectTimer = null, videoRetries = 0, decodeFailures = 0;
@@ -72,7 +74,8 @@ function setSoundLevel(value) {
   if(audioGain)audioGain.gain.value=soundLevel;
   try{localStorage.setItem('portiq.soundLevel.v1',String(soundLevel));}catch(_){}
   if(remoteSession&&controlReady){
-    if(soundLevel){primeAudio();if(!audioSocket)startAudio(epoch);}
+    if(rtcViewer){primeAudio();}
+    else if(soundLevel){primeAudio();if(!audioSocket)startAudio(epoch);}
     else stopAudio();
   }
 }
@@ -318,9 +321,9 @@ function pairRequest(code,desktop) {
   return accountIsAdmin?{pairingCode:code,desktop,accountName:AUTH_NAME,accountPassword}:{pairingCode:code,desktop};
 }
 
-async function bridgeFetch(path, body, base = bridgeUrl) {
+async function bridgeFetch(path, body, base = bridgeUrl, timeoutMs = 12000) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 12000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(base + path, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -391,6 +394,10 @@ function makeSocket(path) {
 }
 
 function connectSockets(current, pairingResult) {
+  if(pairingResult.webRTC&&typeof window.NodeRTC==='function'&&
+      typeof RTCPeerConnection!=='undefined'&&(rtcCooldowns.get(bridgeUrl)||0)<Date.now()){
+    return connectRTC(current,pairingResult);
+  }
   const input = controlSocket = makeSocket('/control/socket');
   const connectStartedAt = performance.now();
   let opened = false, authenticated = false;
@@ -457,6 +464,78 @@ function connectSockets(current, pairingResult) {
     else if (controlReady && now - lastPongAt > 20000) recoverControl('The bridge stopped answering control heartbeats for 20 seconds.');
     else updateStats();
   }, 1000);
+}
+
+function closeRTC() {
+  const previous=rtcViewer;rtcViewer=null;previous?.close();
+  rtcSound?.disconnect();rtcSound=null;
+  if($('rtc-feed'))$('rtc-feed').style.display='none';
+  streamFeed.style.opacity='';
+}
+
+function connectRTC(current,pairingResult) {
+  const base=bridgeUrl,session=remoteSession,video=$('rtc-feed');
+  let ready=false,started=performance.now(),fallingBack=false;
+  sourceGeometry=[pairingResult.nativeWidth,pairingResult.nativeHeight];sourceViewport=null;
+  videoAttemptAt=started;mediaMode='rtc';videoTargetFps=30;
+  const active=()=>current===epoch&&rtcViewer===viewer;
+  async function fallback(){
+    if(!active()||fallingBack)return;fallingBack=true;
+    rtcCooldowns.set(base,Date.now()+300000);
+    clearInterval(heartbeat);clearInterval(watchdog);heartbeat=watchdog=null;
+    pendingInput=[];pressedCodes.clear();heldMouseButtons.clear();controlReady=false;
+    closeRTC();controlSocket=null;hasFrame=false;streamFeed.style.display='none';
+    streamPlaceholder.style.display='flex';connMessage.textContent='Connecting...';
+    // Confirm ownership was released before opening a second input transport.
+    try{await bridgeFetch('/control/rtc/close',{session},base);}catch(_){
+      if(current===epoch)return recoverControl('WebRTC handover failed.');
+      return;
+    }
+    if(current===epoch)connectSockets(current,{...pairingResult,webRTC:false});
+  }
+  const viewer=rtcViewer=new window.NodeRTC({video,session,audio:true,
+    iceServers:pairingResult.iceServers||[],
+    signal:body=>bridgeFetch('/control/rtc/offer',body,base,20000),
+    onFailure:fallback,
+    onInput(message,input){
+      if(!active())return;
+      if(message.type==='ready'){
+        ready=controlReady=true;controlSocket=input;lastPongAt=performance.now();
+        heartbeat=setInterval(()=>{if(active()&&input.readyState===1)input.send(JSON.stringify({type:'ping',t:performance.now()}));},2000);
+        input.send(JSON.stringify({type:'ping',t:performance.now()}));
+      }else if(message.type==='pong'){
+        lastPongAt=performance.now();rttMs=Math.max(0,lastPongAt-message.t);
+        if(hasFrame)controlRetries=0;
+      }else if(message.type==='input-blocked'){
+        clearHeldInput();controlNoticeUntil=performance.now()+4000;
+        rdpConnStatus.textContent='Input blocked by Windows. Approve UAC locally.';
+      }
+    },
+    onFrame(width,height){
+      if(!active()||!width||!height)return;
+      if(streamFeed.width!==width||streamFeed.height!==height){streamFeed.width=width;streamFeed.height=height;}
+      videoTargetFps=viewer.info?.maxFps||30;
+      painted++;lastFrameAt=performance.now();capturePaused=false;videoRetries=0;
+      if(!hasFrame){
+        hasFrame=true;video.style.display='block';streamFeed.style.display='block';streamFeed.style.opacity='0';
+        streamPlaceholder.style.display='none';setOverlayState('live');streamFeed.focus({preventScroll:true});
+      }
+    },
+    onAudio(stream){
+      if(!active())return;primeAudio();
+      if(audioContext&&audioGain){rtcSound?.disconnect();rtcSound=audioContext.createMediaStreamSource(stream);rtcSound.connect(audioGain);}
+    },
+    onStats(stats){if(active()){receivedBytes+=stats.bytes;videoBufferMs=stats.bufferMs;rtcRoute=stats.route;}}
+  });
+  watchdog=setInterval(()=>{
+    if(!active())return;
+    const now=performance.now();
+    if((!ready||!hasFrame)&&now-started>25000)return fallback();
+    if(hasFrame&&now-lastFrameAt>6000)return fallback();
+    if(ready&&now-lastPongAt>12000)return fallback();
+    updateStats();
+  },1000);
+  viewer.start();
 }
 
 function startPreferredVideo(current, pairingResult) {
@@ -714,13 +793,13 @@ function updateStats() {
   if (!hasFrame || capturePaused || performance.now()<controlNoticeUntil) return;
   const now = performance.now(), seconds = (now - statsAt) / 1000;
   if (seconds < 1) return;
-  const targetFps = mediaMode==='h264' ? videoTargetFps : 60;
+  const targetFps = mediaMode==='h264'||mediaMode==='rtc' ? videoTargetFps : 60;
   const fps = Math.min(targetFps, Math.round(painted / seconds));
   const mbps = (receivedBytes * 8 / seconds / 1000000).toFixed(1);
   const resolution = streamFeed.width+'×'+streamFeed.height;
-  rdpConnStatus.textContent = (mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
+  rdpConnStatus.textContent = (mediaMode==='rtc'?rtcRoute+' · ':mediaMode==='h264'?'HD · ':'Standard · ') + resolution + ' · ' + fps +
     '/'+targetFps+' FPS · ' + (rttMs === null ? '…' : Math.round(rttMs)) + ' ms input RTT' +
-    ' · '+mbps+' Mbps'+(mediaMode==='h264'&&videoBufferMs!==null?' · '+Math.round(videoBufferMs)+' ms decode':'');
+    ' · '+mbps+' Mbps'+(videoBufferMs!==null&&['h264','rtc'].includes(mediaMode)?' · '+Math.round(videoBufferMs)+(mediaMode==='rtc'?' ms buffer':' ms decode'):'');
   painted = receivedBytes = 0;
   statsAt = now;
 }
@@ -959,6 +1038,7 @@ function stopConnections() {
   stopAudio();
   if (mouseLocked()) document.exitPointerLock();
   epoch++;
+  closeRTC();
   controlReady = hasFrame = false;
   clearInterval(heartbeat); clearInterval(watchdog);
   clearTimeout(moveTimer); clearTimeout(pointerTimer); clearTimeout(videoReconnectTimer);
@@ -1049,4 +1129,3 @@ function transitionTo(targetPage) {
 }
 function showError(message) { errorMsg.textContent = message; errorMsg.classList.add('visible'); }
 function hideError() { errorMsg.textContent = ''; errorMsg.classList.remove('visible'); }
-
