@@ -51,7 +51,7 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 #youtube-area .youtube-channel{margin-top:5px;font-size:13px;color:#aaa}
 #youtube-area .youtube-result:hover .youtube-result-title{text-decoration:none}
 #youtube-area .youtube-result:hover .youtube-thumb{filter:brightness(1.07)}
-#youtube-area .youtube-stage{max-width:none;margin-bottom:0;scroll-margin-top:calc(var(--yt-toolbar-space) + 4px)}
+#youtube-area .youtube-stage{max-width:none;margin-bottom:0;scroll-margin-top:var(--yt-toolbar-space)}
 #youtube-area .youtube-frame{border:0;border-radius:12px}
 #youtube-area .yt-video-title{font-size:20px;line-height:1.4;letter-spacing:0;margin:14px 0 10px;overflow-wrap:anywhere}
 #youtube-area .yt-video-channel{font-weight:600;color:#f1f1f1;font-size:14px}
@@ -60,8 +60,12 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 #youtube-area .pc-action{background:#272727;border:0;border-radius:22px;font-family:inherit;font-size:13px;font-weight:500}
 #youtube-area .pc-action:hover{background:#3f3f3f}
 #youtube-area.yt-watching .yt-watch-layout{display:block}
-#youtube-area.yt-watching .youtube-stage{width:min(100%,calc((100dvh - var(--yt-toolbar-space) - 8px) * 16 / 9));max-width:none;margin:0 auto 36px}
-#youtube-area.yt-watching .yt-content{max-width:none;padding:4px 4px 36px}
+#youtube-area.yt-watching{--yt-rail:184px;--yt-fit-width:min(calc(100% - (var(--yt-rail) + 4px) * 2),calc((100dvh - var(--yt-toolbar-space) * 2 - 8px) * 16 / 9))}
+#youtube-area.yt-watching .youtube-stage{width:100%;max-width:none;margin:0 auto 36px}
+#youtube-area.yt-watching .yt-content{width:calc(100% + var(--yt-rail));max-width:none;margin-left:calc(var(--yt-rail) * -1);padding:0 0 36px}
+#youtube-area.yt-watching .yt-player-viewport{height:calc(100dvh - var(--yt-toolbar-space));display:grid;place-items:center;padding:4px calc(var(--yt-rail) + 4px) calc(var(--yt-toolbar-space) + 4px)}
+#youtube-area.yt-watching .youtube-frame{width:min(100%,calc((100dvh - var(--yt-toolbar-space) * 2 - 8px) * 16 / 9))}
+#youtube-area.yt-watching .yt-video-title,#youtube-area.yt-watching .youtube-foot{width:var(--yt-fit-width);margin-left:auto;margin-right:auto}
 #youtube-area.yt-watching .yt-topics,#youtube-area.yt-watching .youtube-settings:not([open]),#youtube-area.yt-watching .youtube-status{display:none}
 #youtube-area.yt-watching .youtube-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 20px;max-width:1200px;margin:0 auto}
 #youtube-area .youtube-more{margin:28px auto 0;padding:12px 24px}
@@ -70,4 +74,5 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 @media(max-width:1200px){#youtube-area.yt-watching .youtube-results{grid-template-columns:repeat(2,minmax(0,1fr))}#youtube-area .yt-shell{grid-template-columns:160px minmax(0,1fr)}#youtube-area .yt-content{padding:0 20px 32px}#youtube-area .youtube-results{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){body.browsing-youtube .dash-main{padding:0}#youtube-area .yt-topbar{padding:9px 12px 9px 64px;gap:8px;flex-wrap:wrap;height:auto}#youtube-area .yt-brand{margin-right:auto}#youtube-area .youtube-form{order:4;flex-basis:100%;max-width:none;margin-top:0}#youtube-area .yt-shell{display:flex;flex-direction:column}#youtube-area .yt-sidebar{display:flex;gap:4px;position:static;width:100%;padding:0 12px 8px}#youtube-area .yt-sidebar-button{justify-content:center;gap:6px;padding:0 8px;font-size:12px}#youtube-area .yt-sidebar-button svg{width:19px}#youtube-area .yt-sidebar-divider,#youtube-area .yt-sidebar p{display:none}#youtube-area .yt-content{padding:0 16px 24px}#youtube-area .yt-topics{gap:8px;padding-bottom:16px}#youtube-area .yt-topics button{font-size:13px}#youtube-area .youtube-results{gap:24px 12px}#youtube-area .youtube-result-title{font-size:14px}#youtube-area .youtube-channel{font-size:12px}#youtube-area .youtube-foot{align-items:flex-start;gap:12px}#youtube-area.yt-watching .youtube-results{grid-template-columns:1fr}}
 @media(max-width:480px){#youtube-area .youtube-results{grid-template-columns:1fr}#youtube-area .youtube-key-row{flex-direction:column}#youtube-area .youtube-result-title{font-size:16px}#youtube-area .yt-sidebar-button{flex-direction:column;height:58px;gap:3px}#youtube-area .youtube-settings-body{padding:16px}#youtube-area .youtube-foot{flex-direction:column}}
+@media(max-width:700px){#youtube-area.yt-watching{--yt-rail:0px}}
 

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
-  <link rel="stylesheet" href="youtube.css?v=20261014-player-v2">
+  <link rel="stylesheet" href="youtube.css?v=20261014-center-v3">
   <link rel="stylesheet" href="node-nav.css?v=20261014-player-v2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
@@ -275,7 +275,7 @@
         <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
         <div class="yt-watch-layout">
         <div id="youtube-stage" class="youtube-stage" hidden>
-          <div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+          <div class="yt-player-viewport"><div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
           <h2 id="youtube-video-title" class="yt-video-title"></h2>
           <div class="youtube-foot"><span id="youtube-video-channel" class="yt-video-channel"></span><div class="yt-watch-actions"><button id="youtube-back" class="pc-action" type="button">Back to videos</button><a id="youtube-open" class="pc-action" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube</a></div></div>
         </div>
