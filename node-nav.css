@@ -1,0 +1,25 @@
+/* The original Node navigation, arranged vertically across signed-in pages. */
+body:not(.node-signed-in) #node-panel,body:not(.node-signed-in) #node-panel-toggle{display:none}
+#node-panel{position:fixed;top:60px;bottom:0;left:0;z-index:50;width:184px;height:auto;max-height:none;overflow-y:auto;background:var(--bg);border:0;border-right:1px solid var(--line);border-radius:0;box-shadow:none}
+.node-menu-hidden #node-panel{display:none}
+#node-panel .dash-header-inner{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:100%;height:100%;max-width:none;margin:0;padding:24px 18px;gap:24px}
+#node-panel .dash-brand{font-size:22px;gap:9px}
+#node-panel .dash-brand svg{width:32px;height:32px}
+#node-panel .side-menu{display:flex;flex-direction:column;align-items:stretch;order:0;gap:4px;width:100%;height:auto;margin:0}
+#node-panel .side-menu button{height:42px;padding:0 12px;background:none;border:0;border-radius:0;text-align:left;font-size:13px;font-weight:600;color:var(--muted)}
+#node-panel .side-menu button:hover{background:#ffffff04;color:white}
+#node-panel .side-menu button[aria-current=page]{color:white;background:none}
+#node-panel .side-menu button[aria-current=page]::after{display:block;left:-18px;right:auto;top:8px;bottom:8px;width:2px;height:auto;background:white}
+#node-panel .signed-in-name{margin: auto 0 0;font-size:12px;white-space:normal;overflow-wrap:anywhere}
+#node-panel #menu-toggle{display:none}
+#node-panel .btn-logout{padding:8px 11px;font-size:12px}
+#node-panel-toggle{position:fixed;top:8px;left:8px;z-index:51;display:grid;place-items:center;width:44px;height:44px;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--ink)}
+#node-panel-toggle:hover{background:var(--raised);border-color:#65656f}
+#node-panel-toggle svg{width:24px;height:24px}
+body.node-signed-in #dashboard-page{padding-left:184px}
+body.node-signed-in #login-page{padding-left:208px}
+body.browsing-youtube #node-panel{top:60px}
+body.browsing-youtube #node-panel-toggle{background:var(--bg);border:1px solid var(--line);border-radius:7px}
+body.browsing-youtube #youtube-area .yt-topbar{padding-left:16px}
+@media(max-width:700px){body.node-signed-in #dashboard-page{padding-left:0}body.node-signed-in #login-page{padding-left:24px}body.browsing-youtube #youtube-area .yt-topbar{padding-left:64px}}
+

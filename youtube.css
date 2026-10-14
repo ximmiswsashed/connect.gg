@@ -1,21 +1,6 @@
 /* YouTube-style browsing within the Node workspace. */
 body.browsing-youtube{background:#0f0f0f}
 body.browsing-youtube .dash-main{max-width:none;padding:0}
-#node-panel-toggle{display:none}
-body.browsing-youtube #node-panel-toggle{position:fixed;top:8px;left:8px;z-index:51;display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:10px;background:#242424;color:white}
-body.browsing-youtube #node-panel-toggle:hover{background:#383838}
-#node-panel-toggle svg{width:24px;height:24px}
-body.browsing-youtube .dash-header{position:fixed;top:calc(var(--yt-toolbar-height,60px) + 4px);left:8px;z-index:50;width:176px;height:auto;max-height:calc(100dvh - var(--yt-toolbar-height,60px) - 16px);overflow-y:auto;background:#1c1c1c;border:1px solid #3a3a3a;border-radius:12px;box-shadow:0 8px 24px #0006}
-body.browsing-youtube.node-menu-hidden .dash-header{display:none}
-body.browsing-youtube .dash-header-inner{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:16px;max-width:none}
-body.browsing-youtube .dash-brand{font-size:20px;gap:8px}
-body.browsing-youtube .dash-brand svg{width:26px;height:26px}
-body.browsing-youtube .side-menu{display:flex;flex-direction:column;gap:4px;width:100%;height:auto;margin:0;order:0}
-body.browsing-youtube .side-menu button{height:38px;padding:8px 12px;border-radius:7px;text-align:left}
-body.browsing-youtube .side-menu button[aria-current=page]{background:#353535}
-body.browsing-youtube .side-menu button[aria-current=page]::after{display:none}
-body.browsing-youtube .signed-in-name{margin:0;font-size:12px;white-space:normal}
-body.browsing-youtube #menu-toggle{display:none}
 #youtube-area{min-height:100svh;background:#0f0f0f;font-family:Roboto,Arial,sans-serif;color:#f1f1f1}
 #youtube-area svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 #youtube-area .yt-topbar{display:flex;align-items:center;gap:16px;height:60px;padding:9px 16px 9px 64px;position:sticky;top:0;z-index:5;background:#0f0f0f}

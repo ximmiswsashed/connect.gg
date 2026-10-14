@@ -101,11 +101,6 @@ window.ConnectPortal = (() => {
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.toggle('browsing-youtube',which==='youtube');
-    if(which==='youtube'){
-      document.body.classList.remove('node-menu-hidden');
-      el('node-panel-toggle').setAttribute('aria-expanded','true');
-      el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
-    }
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
@@ -120,9 +115,13 @@ window.ConnectPortal = (() => {
     el('game-topic').replaceChildren(...topics.topics.map(topic=>{const option=document.createElement('option');option.value=option.textContent=topic;return option;}));
     view(user.admin?'computers':'game');clearInterval(poll);poll=setInterval(refresh,750);
     try {render(await api('/api/lobby/state'));} catch(error) {if(error.status!==404)message(error.message);}
+    document.body.classList.add('node-signed-in');
+    document.body.classList.remove('node-menu-hidden');
+    el('node-panel-toggle').setAttribute('aria-expanded','true');
+    el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
     return user;
   }
-  function logout(){generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;}
+  function logout(){generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter');window.NodeYouTube?.onNavigate('');}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
     el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
@@ -136,7 +135,8 @@ window.ConnectPortal = (() => {
     el('node-panel-toggle').setAttribute('aria-expanded',String(!hidden));
     el('node-panel-toggle').setAttribute('aria-label',hidden?'Show Node menu':'Hide Node menu');
   });
-  el('nav-computers').addEventListener('click',()=>view('computers'));el('nav-game').addEventListener('click',()=>view('game'));el('nav-youtube').addEventListener('click',()=>view('youtube'));
+  function navigate(which){view(which);window.transitionTo?.(el('dashboard-page'));window.scrollTo?.(0,0);}
+  el('nav-computers').addEventListener('click',()=>navigate('computers'));el('nav-game').addEventListener('click',()=>navigate('game'));el('nav-youtube').addEventListener('click',()=>navigate('youtube'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
