@@ -1,11 +1,18 @@
 /* Native browser playback: no WebCodecs-to-canvas copy or application ACK queue. */
 class NodeRTC {
-  constructor({video, iceServers, signal, session, audio, onInput, onFrame, onAudio, onStats, onFailure}) {
-    Object.assign(this,{video,signal,session,audio,onInput,onFrame,onAudio,onStats,onFailure});
+  constructor({video, iceServers, signal, sendCandidates, trickle=false, session, audio, onInput, onFrame, onAudio, onStats, onFailure}) {
+    Object.assign(this,{video,signal,sendCandidates,trickle,session,audio,onInput,onFrame,onAudio,onStats,onFailure});
     this.closed=false;this.failed=false;this.previousStats=null;this.frameHandle=null;
     this.stage='browser-setup';this.failureReason=null;this.errorName=null;
     this.startedAt=performance.now();this.hasVideo=false;this.hasAudio=false;
     this.peer=new RTCPeerConnection({iceServers,bundlePolicy:'max-bundle'});
+    this.pendingCandidates=[];this.sentCandidates=new Set();this.candidateBatches=0;this.candidatesSent=0;
+    this.peer.onicecandidate=event=>{
+      if(this.closed||!this.trickle)return;
+      this.pendingCandidates.push(event.candidate?event.candidate.toJSON():null);
+      if(this.pendingCandidates.length>128)return this.fail('candidate-overflow');
+      this.scheduleCandidates();
+    };
     const receiver=this.peer.addTransceiver('video',{direction:'recvonly'});
     const codecs=RTCRtpReceiver.getCapabilities?.('video')?.codecs;
     const high=codecs?.filter(c=>c.mimeType==='video/H264'&&/profile-level-id=6400/i.test(c.sdpFmtpLine||''));
@@ -43,7 +50,7 @@ class NodeRTC {
     try{
       this.stage='gathering-candidates';
       await this.peer.setLocalDescription(await this.peer.createOffer());
-      if(this.peer.iceGatheringState!=='complete')await new Promise(resolve=>{
+      if(!this.trickle&&this.peer.iceGatheringState!=='complete')await new Promise(resolve=>{
         const timeout=setTimeout(done,5000),peer=this.peer;
         function done(){clearTimeout(timeout);peer.removeEventListener('icegatheringstatechange',changed);resolve();}
         function changed(){if(peer.iceGatheringState==='complete')done();}
@@ -51,12 +58,48 @@ class NodeRTC {
       });
       if(this.closed)return;
       this.stage='signaling';
-      const answer=await this.signal({session:this.session,sdp:this.peer.localDescription.sdp,audio:this.audio});
+      const localSDP=this.peer.localDescription.sdp;
+      let mid=null;
+      for(const line of localSDP.split(/\r?\n/)){
+        if(line.startsWith('m='))mid=null;
+        if(line.startsWith('a=mid:'))mid=line.slice(6);
+        if(line.startsWith('a=candidate:'))this.sentCandidates.add(mid+'|'+line.slice(2));
+      }
+      const offerSDP=this.trickle?localSDP.replace(/^a=end-of-candidates\r?\n/gm,''):localSDP;
+      const answer=await this.signal({session:this.session,sdp:offerSDP,audio:this.audio});
       if(this.closed)return;
       this.info=answer;
       this.stage='connecting';
       await this.peer.setRemoteDescription({type:'answer',sdp:answer.sdp});
+      if(this.trickle&&answer.trickleICE&&answer.peerId){
+        this.candidateReady=true;
+        if(this.peer.iceGatheringState==='complete'&&!this.pendingCandidates.includes(null))this.pendingCandidates.push(null);
+        this.scheduleCandidates();
+      }
     }catch(error){this.errorName=['Error','TypeError','OperationError','InvalidStateError','NotSupportedError','AbortError'].includes(error?.name)?error.name:'Other';this.fail('setup-failed');}
+  }
+  scheduleCandidates(){
+    if(this.closed||!this.candidateReady||this.candidateTimer||this.candidateBusy)return;
+    this.candidateTimer=setTimeout(()=>{this.candidateTimer=null;this.flushCandidates();},20);
+  }
+  async flushCandidates(){
+    if(this.closed||!this.candidateReady||this.candidateBusy||!this.sendCandidates)return;
+    this.candidateBusy=true;
+    try{
+      while(this.pendingCandidates.length&&!this.closed){
+        const batch=[];
+        while(this.pendingCandidates.length&&batch.length<32){
+          const candidate=this.pendingCandidates.shift();
+          const key=candidate?candidate.sdpMid+'|'+candidate.candidate:'end';
+          if(this.sentCandidates.has(key))continue;
+          this.sentCandidates.add(key);batch.push(candidate);
+        }
+        if(!batch.length)continue;
+        await this.sendCandidates({session:this.session,peerId:this.info.peerId,candidates:batch});
+        this.candidateBatches++;this.candidatesSent+=batch.filter(Boolean).length;
+      }
+    }catch(_){this.fail('candidate-exchange-failed');}
+    finally{this.candidateBusy=false;}
   }
   async stats() {
     if(this.closed||this.statsBusy)return;
@@ -95,6 +138,7 @@ class NodeRTC {
       peerConnection:this.peer.connectionState,signaling:this.peer.signalingState,
       input:this.channel.readyState,videoTrack:this.hasVideo,audioTrack:this.hasAudio,
       h264Profiles:this.h264Profiles||[],
+      trickleICE:!!this.trickle,candidateBatches:this.candidateBatches||0,candidatesSent:this.candidatesSent||0,
       localCandidates:candidates(this.peer.localDescription?.sdp),
       remoteCandidates:candidates(this.peer.remoteDescription?.sdp)};
   }
@@ -102,6 +146,7 @@ class NodeRTC {
   close(){
     if(this.closed)return;this.closed=true;
     clearInterval(this.statsTimer);clearInterval(this.frameTimer);
+    clearTimeout(this.candidateTimer);this.pendingCandidates=[];
     if(this.frameHandle!==null)this.video.cancelVideoFrameCallback?.(this.frameHandle);
     this.video.pause();this.video.srcObject=null;
     this.channel.close();this.peer.close();

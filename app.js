@@ -19,7 +19,7 @@ let mediaMode = null;
 let rtcViewer=null, rtcSound=null, rtcRoute='WebRTC';
 const rtcCooldowns=new Map();
 const rtcFailures=new Map();
-let connectionReport={build:'20261014-rtc-v2'};
+let connectionReport={build:'20261014-rtc-v3'};
 function connectionReportText(){
   return JSON.stringify({...connectionReport,transport:mediaMode==='rtc'?rtcRoute:mediaMode==='h264'?'HD':mediaMode,
     browserWebRTC:typeof RTCPeerConnection!=='undefined',viewerWebRTC:typeof window.NodeRTC==='function',
@@ -400,7 +400,7 @@ async function openDesktop(num) {
       throw new Error('Update the home bridge dependencies and restart streamer.py. This viewer needs the 60 FPS bridge.');
     }
     statsAt = performance.now();
-    connectionReport={build:'20261014-rtc-v2',bridgeWebRTC:result.webRTC===true,rtc:rtcFailures.get(base)||null};
+    connectionReport={build:'20261014-rtc-v3',bridgeWebRTC:result.webRTC===true,bridgeTrickleICE:result.trickleICE===true,rtc:rtcFailures.get(base)||null};
     connectSockets(current, result);
   } catch (error) {
     if (current === epoch) {
@@ -520,8 +520,10 @@ function connectRTC(current,pairingResult) {
   }
   let viewer=null;
   try{viewer=rtcViewer=new window.NodeRTC({video,session,audio:true,
+    trickle:pairingResult.trickleICE===true,
     iceServers:pairingResult.iceServers||[],
     signal:body=>bridgeFetch('/control/rtc/offer',body,base,20000),
+    sendCandidates:body=>bridgeFetch('/control/rtc/candidates',body,base),
     onFailure:fallback,
     onInput(message,input){
       if(!active())return;
