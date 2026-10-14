@@ -18,6 +18,28 @@ let epoch = 0, controlSocket = null, videoSocket = null, controlReady = false, h
 let mediaMode = null;
 let rtcViewer=null, rtcSound=null, rtcRoute='WebRTC';
 const rtcCooldowns=new Map();
+const rtcFailures=new Map();
+let connectionReport={build:'20261014-rtc-v2'};
+function connectionReportText(){
+  return JSON.stringify({...connectionReport,transport:mediaMode==='rtc'?rtcRoute:mediaMode==='h264'?'HD':mediaMode,
+    browserWebRTC:typeof RTCPeerConnection!=='undefined',viewerWebRTC:typeof window.NodeRTC==='function',
+    cooldownRemainingMs:Math.max(0,(rtcCooldowns.get(bridgeUrl)||0)-Date.now()),
+    resolution:hasFrame?[streamFeed.width,streamFeed.height]:null,
+    inputRttMs:rttMs===null?null:Math.round(rttMs),
+    rtc:rtcViewer?.report?.()||connectionReport.rtc||null},null,2);
+}
+$('connection-report-btn')?.addEventListener('click',async()=>{
+  const text=connectionReportText();
+  try{
+    if(typeof navigator!=='undefined'&&navigator.clipboard?.writeText){
+      await navigator.clipboard.writeText(text);
+      $('connection-report-btn').title='Connection report copied';return;
+    }
+  }catch(_){}
+  $('connection-report-text').value=text;$('connection-report-panel').hidden=false;
+  $('connection-report-text').focus();$('connection-report-text').select();
+});
+$('connection-report-close')?.addEventListener('click',()=>{$('connection-report-panel').hidden=true;});
 let videoBufferMs = null;
 let heartbeat = null, watchdog = null, moveTimer = null, pendingMove = null;
 let videoReconnectTimer = null, videoRetries = 0, decodeFailures = 0;
@@ -378,6 +400,7 @@ async function openDesktop(num) {
       throw new Error('Update the home bridge dependencies and restart streamer.py. This viewer needs the 60 FPS bridge.');
     }
     statsAt = performance.now();
+    connectionReport={build:'20261014-rtc-v2',bridgeWebRTC:result.webRTC===true,rtc:rtcFailures.get(base)||null};
     connectSockets(current, result);
   } catch (error) {
     if (current === epoch) {
@@ -479,8 +502,10 @@ function connectRTC(current,pairingResult) {
   sourceGeometry=[pairingResult.nativeWidth,pairingResult.nativeHeight];sourceViewport=null;
   videoAttemptAt=started;mediaMode='rtc';videoTargetFps=30;
   const active=()=>current===epoch&&rtcViewer===viewer;
-  async function fallback(){
+  async function fallback(reason='connection-timeout'){
     if(!active()||fallingBack)return;fallingBack=true;
+    connectionReport.rtc=viewer?.report?.(reason)||{reason};
+    rtcFailures.set(base,connectionReport.rtc);
     rtcCooldowns.set(base,Date.now()+300000);
     clearInterval(heartbeat);clearInterval(watchdog);heartbeat=watchdog=null;
     pendingInput=[];pressedCodes.clear();heldMouseButtons.clear();controlReady=false;
@@ -493,7 +518,8 @@ function connectRTC(current,pairingResult) {
     }
     if(current===epoch)connectSockets(current,{...pairingResult,webRTC:false});
   }
-  const viewer=rtcViewer=new window.NodeRTC({video,session,audio:true,
+  let viewer=null;
+  try{viewer=rtcViewer=new window.NodeRTC({video,session,audio:true,
     iceServers:pairingResult.iceServers||[],
     signal:body=>bridgeFetch('/control/rtc/offer',body,base,20000),
     onFailure:fallback,
@@ -526,13 +552,13 @@ function connectRTC(current,pairingResult) {
       if(audioContext&&audioGain){rtcSound?.disconnect();rtcSound=audioContext.createMediaStreamSource(stream);rtcSound.connect(audioGain);}
     },
     onStats(stats){if(active()){receivedBytes+=stats.bytes;videoBufferMs=stats.bufferMs;rtcRoute=stats.route;}}
-  });
+  });}catch(error){connectionReport.rtc={reason:'browser-setup-failed',stage:'browser-setup'};fallback('browser-setup-failed');return;}
   watchdog=setInterval(()=>{
     if(!active())return;
     const now=performance.now();
-    if((!ready||!hasFrame)&&now-started>25000)return fallback();
-    if(hasFrame&&now-lastFrameAt>6000)return fallback();
-    if(ready&&now-lastPongAt>12000)return fallback();
+    if((!ready||!hasFrame)&&now-started>25000)return fallback('connection-timeout');
+    if(hasFrame&&now-lastFrameAt>6000)return fallback('video-stalled');
+    if(ready&&now-lastPongAt>12000)return fallback('input-heartbeat-timeout');
     updateStats();
   },1000);
   viewer.start();
@@ -1039,6 +1065,7 @@ function stopConnections() {
   if (mouseLocked()) document.exitPointerLock();
   epoch++;
   closeRTC();
+  if($('connection-report-panel'))$('connection-report-panel').hidden=true;
   controlReady = hasFrame = false;
   clearInterval(heartbeat); clearInterval(watchdog);
   clearTimeout(moveTimer); clearTimeout(pointerTimer); clearTimeout(videoReconnectTimer);

@@ -313,6 +313,7 @@
           <input id="sound-level" type="range" min="0" max="100" step="1" value="70" aria-describedby="sound-value">
           <output id="sound-value" for="sound-level">70%</output>
         </div>
+        <button id="connection-report-btn" class="rdp-btn" type="button" title="Copy connection report" aria-label="Copy connection report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H6v16h12V5h-3"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 11h6M9 15h6"/></svg></button>
         <button id="rdp-close-btn" class="rdp-btn close" title="Disconnect">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/>
@@ -322,6 +323,7 @@
       </div>
     </div>
     <div class="rdp-frame-container">
+      <section id="connection-report-panel" aria-label="Connection report" hidden style="position:absolute;right:12px;top:48px;z-index:8;width:min(380px,calc(100% - 24px));padding:16px;background:#141416;border:1px solid #52525b;border-radius:12px;"><label for="connection-report-text">Connection report</label><textarea id="connection-report-text" readonly rows="10" style="display:block;width:100%;margin:12px 0;padding:10px;background:#09090b;color:#f7f7f8;border:1px solid #52525b;border-radius:7px;font:13px/1.6 monospace;"></textarea><button id="connection-report-close" class="pc-action" type="button">Close report</button></section>
       <!-- Bridge state: Connecting spinner -->
       <div class="stream-placeholder" id="stream-placeholder">
         <div class="conn-spinner" id="conn-spinner">
@@ -338,8 +340,8 @@
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20261014-game-v1"></script>
   <script src="youtube.js?v=20261014-player-v2"></script>
-  <script src="rtc-viewer.js?v=20261014-rtc-v1"></script>
-  <script src="app.js?v=20261014-rtc-v1"></script>
+  <script src="rtc-viewer.js?v=20261014-rtc-v2"></script>
+  <script src="app.js?v=20261014-rtc-v2"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>
     <label class="overlay-option" for="overlay-source">Monitor to overlay
