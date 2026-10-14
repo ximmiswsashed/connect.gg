@@ -7,6 +7,17 @@ window.NodeYouTube = (() => {
   const results = el('youtube-results'), more = el('youtube-more');
   const stage = el('youtube-stage'), player = el('youtube-player'), open = el('youtube-open');
   const area = el('youtube-area'), menu = el('youtube-menu');
+  const toolbarToggle = el('youtube-toolbar-toggle');
+  function showToolbar(show) {
+    area.classList.toggle('yt-toolbar-collapsed', !show);
+    toolbarToggle.setAttribute('aria-expanded', String(show));
+    toolbarToggle.setAttribute('aria-label', show ? 'Hide YouTube toolbar' : 'Show YouTube toolbar');
+    toolbarToggle.querySelector?.('path')?.setAttribute('d', show ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6');
+  }
+  toolbarToggle.addEventListener('click', () => {
+    showToolbar(toolbarToggle.getAttribute('aria-expanded') !== 'true');
+    if (!stage.hidden) stage.scrollIntoView?.({ behavior: 'auto', block: 'start' });
+  });
   if (typeof ResizeObserver === 'function') {
     new ResizeObserver(entries => {
       const height = entries[0]?.target.getBoundingClientRect().height;
@@ -22,6 +33,7 @@ window.NodeYouTube = (() => {
   const setStatus = message => { status.textContent = message; };
   const stopVideo = () => { player.src = 'about:blank'; };
   const home = () => {
+    showToolbar(true);
     area.classList.remove('yt-watching', 'yt-menu-collapsed');
     menu.setAttribute('aria-expanded', 'true');
     stage.hidden = true;

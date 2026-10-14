@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
-  <link rel="stylesheet" href="youtube.css?v=20261014-nav-v1">
-  <link rel="stylesheet" href="node-nav.css?v=20261014-nav-v1">
+  <link rel="stylesheet" href="youtube.css?v=20261014-player-v2">
+  <link rel="stylesheet" href="node-nav.css?v=20261014-player-v2">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -250,7 +250,8 @@
         </div>
       </section>
       <section id="youtube-area" class="youtube-area" hidden aria-labelledby="youtube-title">
-        <header class="yt-topbar">
+        <button id="youtube-toolbar-toggle" type="button" aria-label="Hide YouTube toolbar" aria-expanded="true" aria-controls="youtube-toolbar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+        <header id="youtube-toolbar" class="yt-topbar">
           <button id="youtube-menu" class="yt-icon-button" type="button" aria-label="Toggle video menu" aria-controls="youtube-sidebar" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
           <button id="youtube-brand" class="yt-brand" type="button" aria-label="YouTube videos"><svg viewBox="0 0 30 22" aria-hidden="true"><rect width="30" height="22" rx="6" fill="#ff0033"/><path d="m12 6 9 5-9 5z" fill="white"/></svg><span id="youtube-title">YouTube</span></button>
         <form id="youtube-form" class="youtube-form" role="search">
@@ -334,7 +335,7 @@
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20261014-nav-v1"></script>
-  <script src="youtube.js?v=20261013-youtube-v5"></script>
+  <script src="youtube.js?v=20261014-player-v2"></script>
   <script src="app.js?v=20260930-school-v6"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">
     <h2 id="overlay-title">Overlay?</h2>

@@ -1,7 +1,12 @@
 /* YouTube-style browsing within the Node workspace. */
 body.browsing-youtube{background:#0f0f0f}
 body.browsing-youtube .dash-main{max-width:none;padding:0}
-#youtube-area{min-height:100svh;background:#0f0f0f;font-family:Roboto,Arial,sans-serif;color:#f1f1f1}
+#youtube-area{--yt-toolbar-space:var(--yt-toolbar-height,60px);min-height:100svh;background:#0f0f0f;font-family:Roboto,Arial,sans-serif;color:#f1f1f1}
+#youtube-area #youtube-toolbar-toggle{position:fixed;top:14px;left:64px;z-index:51;width:32px;height:28px;display:grid;place-items:center;border:1px solid #303034;border-radius:6px;background:#0b0b0c;color:#f7f7f8}
+#youtube-area #youtube-toolbar-toggle:hover{background:#242424}
+#youtube-area #youtube-toolbar-toggle svg{width:20px;height:20px}
+#youtube-area.yt-toolbar-collapsed{--yt-toolbar-space:0px}
+#youtube-area.yt-toolbar-collapsed .yt-topbar{display:none}
 #youtube-area svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 #youtube-area .yt-topbar{display:flex;align-items:center;gap:16px;height:60px;padding:9px 16px 9px 64px;position:sticky;top:0;z-index:5;background:#0f0f0f}
 #youtube-area .yt-icon-button{display:grid;place-items:center;width:40px;height:40px;flex:none;border:0;border-radius:50%;background:transparent;color:#f1f1f1}
@@ -46,7 +51,7 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 #youtube-area .youtube-channel{margin-top:5px;font-size:13px;color:#aaa}
 #youtube-area .youtube-result:hover .youtube-result-title{text-decoration:none}
 #youtube-area .youtube-result:hover .youtube-thumb{filter:brightness(1.07)}
-#youtube-area .youtube-stage{max-width:none;margin-bottom:0;scroll-margin-top:calc(var(--yt-toolbar-height,60px) + 12px)}
+#youtube-area .youtube-stage{max-width:none;margin-bottom:0;scroll-margin-top:calc(var(--yt-toolbar-space) + 4px)}
 #youtube-area .youtube-frame{border:0;border-radius:12px}
 #youtube-area .yt-video-title{font-size:20px;line-height:1.4;letter-spacing:0;margin:14px 0 10px;overflow-wrap:anywhere}
 #youtube-area .yt-video-channel{font-weight:600;color:#f1f1f1;font-size:14px}
@@ -55,8 +60,8 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 #youtube-area .pc-action{background:#272727;border:0;border-radius:22px;font-family:inherit;font-size:13px;font-weight:500}
 #youtube-area .pc-action:hover{background:#3f3f3f}
 #youtube-area.yt-watching .yt-watch-layout{display:block}
-#youtube-area.yt-watching .youtube-stage{width:min(100%,calc((100dvh - var(--yt-toolbar-height,60px) - 24px) * 16 / 9));max-width:none;margin:0 auto 36px}
-#youtube-area.yt-watching .yt-content{padding-top:12px}
+#youtube-area.yt-watching .youtube-stage{width:min(100%,calc((100dvh - var(--yt-toolbar-space) - 8px) * 16 / 9));max-width:none;margin:0 auto 36px}
+#youtube-area.yt-watching .yt-content{max-width:none;padding:4px 4px 36px}
 #youtube-area.yt-watching .yt-topics,#youtube-area.yt-watching .youtube-settings:not([open]),#youtube-area.yt-watching .youtube-status{display:none}
 #youtube-area.yt-watching .youtube-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 20px;max-width:1200px;margin:0 auto}
 #youtube-area .youtube-more{margin:28px auto 0;padding:12px 24px}
