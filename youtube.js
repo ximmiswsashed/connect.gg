@@ -1,178 +1,182 @@
-/* YouTube search uses the official Data API; playback uses the official embed. */
+/* Official YouTube playback; private per-account progress, shared server search. */
 window.NodeYouTube = (() => {
   const el = id => document.getElementById(id);
-  const form = el('youtube-form'), queryInput = el('youtube-query'), searchButton = el('youtube-search');
-  const settings = el('youtube-settings'), keyInput = el('youtube-api-key');
-  const keyStatus = el('youtube-key-status'), error = el('youtube-error'), status = el('youtube-status');
-  const results = el('youtube-results'), more = el('youtube-more');
-  const stage = el('youtube-stage'), player = el('youtube-player'), open = el('youtube-open');
-  const area = el('youtube-area'), menu = el('youtube-menu');
-  const toolbarToggle = el('youtube-toolbar-toggle');
-  function showToolbar(show) {
-    area.classList.toggle('yt-toolbar-collapsed', !show);
-    toolbarToggle.setAttribute('aria-expanded', String(show));
-    toolbarToggle.setAttribute('aria-label', show ? 'Hide YouTube toolbar' : 'Show YouTube toolbar');
-    toolbarToggle.querySelector?.('path')?.setAttribute('d', show ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6');
+  const area=el('youtube-area'),stage=el('youtube-stage'),results=el('youtube-results');
+  const settings=el('youtube-settings'),keyInput=el('youtube-api-key'),error=el('youtube-error');
+  const searchButton=el('youtube-search'),more=el('youtube-more'),toolbarToggle=el('youtube-toolbar-toggle');
+  let account=null,epoch=0,active=false,history=[],current=null,yt=null,playerVersion=0;
+  let lastQuery='',nextPage='',loading=false,searchVersion=0,apiPromise=null,ready=false,showingHistory=false;
+  let timer=null,lastSync=0,pending=new Map(),syncBusy=false,resumeTarget=null,resumeDeadline=0;
+  const validId=id=>/^[A-Za-z0-9_-]{11}$/.test(id||'');
+  const api=(action,data={})=>window.ConnectPortal.request('/api/youtube/'+action,data);
+  const storageKey=()=>account?'node.youtube.history.v1.'+account.id:null;
+  const showError=message=>{error.textContent=message;error.hidden=!message;};
+  const status=message=>{el('youtube-status').textContent=message;};
+  const time=value=>{const s=Math.max(0,Math.floor(Number(value)||0));return s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;};
+  const clean=item=>item&&validId(item.video)&&Number.isFinite(item.position)&&Number.isFinite(item.duration)&&Number.isFinite(item.updated)&&item.position>=0&&item.duration>=0;
+  function persist(){
+    if(!account)return;
+    try{localStorage.setItem(storageKey(),JSON.stringify(history.slice(0,200)));}
+    catch(_){el('youtube-history-status').textContent='Browser storage is unavailable. Progress will save to your account while connected.';}
   }
-  toolbarToggle.addEventListener('click', () => {
-    showToolbar(toolbarToggle.getAttribute('aria-expanded') !== 'true');
-    if (!stage.hidden) stage.scrollIntoView?.({ behavior: 'auto', block: 'start' });
-  });
-  if (typeof ResizeObserver === 'function') {
-    new ResizeObserver(entries => {
-      const height = entries[0]?.target.getBoundingClientRect().height;
-      if (height > 0) document.documentElement.style.setProperty('--yt-toolbar-height', `${height}px`);
-    }).observe(area.querySelector('.yt-topbar'));
-  }
-  const storageKey = 'node.youtube.apiKey.v1';
-  let currentId = '', lastQuery = '', nextPage = '', loading = false, searchVersion = 0;
-  const validId = id => /^[A-Za-z0-9_-]{11}$/.test(id || '');
-  const embedUrl = id => `https://www.youtube-nocookie.com/embed/${id}?playsinline=1`;
-  const savedKey = () => { try { return window.localStorage.getItem(storageKey) || ''; } catch (_) { return ''; } };
-  const showError = message => { error.textContent = message; error.hidden = !message; };
-  const setStatus = message => { status.textContent = message; };
-  const stopVideo = () => { player.src = 'about:blank'; };
-  const home = () => {
-    showToolbar(true);
-    area.classList.remove('yt-watching', 'yt-menu-collapsed');
-    menu.setAttribute('aria-expanded', 'true');
-    stage.hidden = true;
-    currentId = '';
-    stopVideo();
-    el('youtube-home').setAttribute('aria-current', 'page');
-    el('youtube-all').setAttribute('aria-pressed', 'true');
-    for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.setAttribute('aria-pressed', 'false');
-  };
-  const play = (id, title, channel) => {
-    if (!validId(id)) return;
-    currentId = id;
-    stage.hidden = false;
-    area.classList.add('yt-watching', 'yt-menu-collapsed');
-    menu.setAttribute('aria-expanded', 'false');
-    el('youtube-video-title').textContent = title;
-    el('youtube-video-channel').textContent = channel;
-    player.title = title;
-    open.href = `https://www.youtube.com/watch?v=${id}`;
-    player.src = embedUrl(id);
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    stage.scrollIntoView?.({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
-  };
-  const addResult = item => {
-    const id = item?.id?.videoId;
-    if (!validId(id)) return false;
-    const title = String(item.snippet?.title || 'Untitled video');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'youtube-result';
-    button.setAttribute('aria-label', `Play ${title}`);
-    const image = document.createElement('img');
-    image.className = 'youtube-thumb';
-    image.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-    image.alt = '';
-    image.loading = 'lazy';
-    const heading = document.createElement('span');
-    heading.className = 'youtube-result-title';
-    heading.textContent = title;
-    const channel = document.createElement('span');
-    channel.className = 'youtube-channel';
-    channel.textContent = String(item.snippet?.channelTitle || 'YouTube');
-    button.append(image, heading, channel);
-    button.addEventListener('click', () => play(id, title, channel.textContent));
-    results.append(button);
-    return true;
-  };
-  async function search(append = false) {
-    if (loading) return;
-    const key = savedKey();
-    if (!key) {
-      settings.open = true;
-      showError('Add a YouTube Data API key under Search setup before searching.');
-      keyInput.focus();
-      return;
-    }
-    const query = lastQuery.trim();
-    if (!query) return;
-    const version = ++searchVersion;
-    loading = true;
-    searchButton.disabled = true;
-    more.disabled = true;
-    showError('');
-    setStatus(append ? 'Loading more videos…' : `Searching for “${query}”…`);
-    try {
-      const params = new URLSearchParams({ part: 'snippet', type: 'video', videoEmbeddable: 'true', videoSyndicated: 'true', maxResults: '18', q: query });
-      if (append && nextPage) params.set('pageToken', nextPage);
-      const response = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`, { cache: 'no-store', referrerPolicy: 'strict-origin-when-cross-origin', headers: { 'X-Goog-Api-Key': key } });
-      const data = await response.json();
-      if (version !== searchVersion) return;
-      if (!response.ok) {
-        const reason = data?.error?.errors?.[0]?.reason || '';
-        if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') throw new Error('YouTube search has reached its daily limit. Try again tomorrow.');
-        if (response.status === 400 || response.status === 403) throw new Error('YouTube rejected this API key. Check that YouTube Data API v3 is enabled and the key allows this website.');
-        throw new Error('YouTube search is unavailable right now. Please try again.');
+  function remember(item){history=[item,...history.filter(row=>row.video!==item.video)].sort((a,b)=>b.updated-a.updated).slice(0,200);persist();}
+  function snapshot(){
+    if(!account||!current||!ready||!yt)return;
+    try{
+      const position=yt.getCurrentTime(),duration=yt.getDuration();
+      if(!Number.isFinite(position)||!Number.isFinite(duration)||duration<=0)return;
+      if(resumeTarget!==null){
+        if(Math.abs(position-resumeTarget)>2&&Date.now()<resumeDeadline)return;
+        resumeTarget=null;
       }
-      let added = 0;
-      for (const item of data.items || []) if (addResult(item)) added++;
-      nextPage = data.nextPageToken || '';
-      more.hidden = !nextPage;
-      setStatus(results.children.length ? `${results.children.length} videos for “${query}”` : `No playable results for “${query}”. Try a different search.`);
-      if (append && !added) more.hidden = true;
-    } catch (failure) {
-      if (version !== searchVersion) return;
-      showError(failure instanceof TypeError ? 'Cannot reach YouTube search from this network. Try again when the connection is available.' : failure.message);
-      setStatus('Search did not complete.');
-    } finally {
-      if (version === searchVersion) { loading = false; searchButton.disabled = false; more.disabled = false; }
-    }
+      if(Math.abs(position-current.position)<.01&&duration===current.duration)return;
+      current={...current,position:Math.max(0,Math.min(position,duration)),duration,updated:Date.now()/1000};
+      remember(current);pending.set(current.video,{...current});
+    }catch(_){} // The player may not yet be ready.
   }
-  keyInput.value = savedKey();
-  if (!keyInput.value) { settings.open = true; setStatus('Add your YouTube Data API key under Search setup to begin.'); }
-  el('youtube-save-key').addEventListener('click', () => {
-    const value = keyInput.value.trim();
-    if (value.length < 20 || value.length > 200 || /\s/.test(value)) { keyStatus.textContent = 'Enter the full API key from Google Cloud.'; return; }
-    try { window.localStorage.setItem(storageKey, value); keyStatus.textContent = 'Key saved in this browser. You can search now.'; settings.open = false; setStatus('Search YouTube to see videos here.'); showError(''); }
-    catch (_) { keyStatus.textContent = 'This browser could not save the key. Check storage permissions.'; }
-  });
-  el('youtube-remove-key').addEventListener('click', () => {
-    try { window.localStorage.removeItem(storageKey); } catch (_) {}
-    keyInput.value = '';
-    keyStatus.textContent = 'Key removed from this browser.';
-    settings.open = true;
-    setStatus('Add your YouTube Data API key under Search setup to begin.');
-  });
-  const searchFor = query => {
-    if (loading) return;
-    lastQuery = query.trim();
-    if (!lastQuery) return;
-    queryInput.value = lastQuery;
-    home();
-    el('youtube-all').setAttribute('aria-pressed', 'false');
-    el('youtube-home').setAttribute('aria-current', 'false');
-    for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.setAttribute('aria-pressed', String(button.dataset.youtubeQuery === lastQuery));
-    results.replaceChildren();
-    nextPage = '';
-    more.hidden = true;
-    stage.hidden = true;
-    currentId = '';
-    stopVideo();
-    search();
-  };
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    searchFor(queryInput.value);
-  });
-  el('youtube-home').addEventListener('click', home);
-  el('youtube-brand').addEventListener('click', home);
-  el('youtube-all').addEventListener('click', home);
-  el('youtube-back').addEventListener('click', home);
-  menu.addEventListener('click', () => { const collapsed = area.classList.toggle('yt-menu-collapsed'); menu.setAttribute('aria-expanded', String(!collapsed)); });
-  el('youtube-setup-toggle').addEventListener('click', () => { settings.open = !settings.open; if (settings.open) keyInput.focus(); });
-  for (const button of document.querySelectorAll?.('[data-youtube-query]') || []) button.addEventListener('click', () => searchFor(button.dataset.youtubeQuery));
-  more.addEventListener('click', () => { if (nextPage) search(true); });
-  return {
-    onNavigate(which) {
-      if (which === 'youtube') { if (currentId && player.src === 'about:blank') player.src = embedUrl(currentId); }
-      else if (player.src !== 'about:blank') stopVideo();
+  async function sync(){
+    if(syncBusy||!account||!pending.size)return;
+    const generation=epoch,owner=account.id;syncBusy=true;lastSync=Date.now();
+    try{
+      for(const [id,item] of [...pending]){
+        if(generation!==epoch||account?.id!==owner)break;
+        await api('progress',item);
+        if(generation!==epoch)break;
+        if(pending.get(id)===item)pending.delete(id);
+      }
+      if(generation===epoch)el('youtube-history-status').textContent='History is private to your account.';
+    }catch(_){if(generation===epoch)el('youtube-history-status').textContent='Saved on this device. Account sync will retry when connected.';}
+    finally{if(generation===epoch)syncBusy=false;}
+  }
+  function pause(){snapshot();sync();try{yt?.pauseVideo();}catch(_){}clearInterval(timer);timer=null;}
+  function showToolbar(show){
+    area.classList.toggle('yt-toolbar-collapsed',!show);
+    toolbarToggle.setAttribute('aria-expanded',String(show));toolbarToggle.setAttribute('aria-label',show?'Hide YouTube toolbar':'Show YouTube toolbar');
+    toolbarToggle.querySelector('path').setAttribute('d',show?'m6 15 6-6 6 6':'m6 9 6 6 6-6');
+  }
+  toolbarToggle.addEventListener('click',()=>{showToolbar(toolbarToggle.getAttribute('aria-expanded')!=='true');if(!stage.hidden)stage.scrollIntoView({block:'start'});});
+  if(typeof ResizeObserver==='function')new ResizeObserver(entries=>{
+    const height=entries[0]?.target.getBoundingClientRect().height;
+    if(height>0)document.documentElement.style.setProperty('--yt-toolbar-height',`${height}px`);
+  }).observe(area.querySelector('.yt-topbar'));
+  function loadAPI(){
+    if(window.YT?.Player)return Promise.resolve();
+    if(apiPromise)return apiPromise;
+    apiPromise=new Promise((resolve,reject)=>{
+      const previous=window.onYouTubeIframeAPIReady;
+      const timeout=setTimeout(()=>{apiPromise=null;reject(new Error('Player controls did not load. Check your connection and reopen this video to enable saved progress.'));},15000);
+      window.onYouTubeIframeAPIReady=()=>{clearTimeout(timeout);previous?.();resolve();};
+      let script=document.querySelector('script[data-node-youtube-api]');
+      if(!script){script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.dataset.nodeYoutubeApi='true';document.head.append(script);}
+      script.onerror=()=>{clearTimeout(timeout);apiPromise=null;script.remove();reject(new Error('Cannot load YouTube playback controls. Check your connection, then reopen the video.'));};
+    });return apiPromise;
+  }
+  function destroyPlayer(){
+    ready=false;resumeTarget=null;playerVersion++;try{yt?.destroy();}catch(_){}yt=null;
+    const frame=document.createElement('iframe');frame.id='youtube-player';frame.title='YouTube video player';frame.src='about:blank';
+    frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';
+    area.querySelector('.youtube-frame').replaceChildren(frame);return frame;
+  }
+  function home(){
+    pause();showToolbar(true);showingHistory=false;el('youtube-history-panel').hidden=true;
+    area.classList.remove('yt-watching','yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded','true');stage.hidden=true;
+    el('youtube-home').setAttribute('aria-current','page');el('youtube-history').setAttribute('aria-current','false');results.hidden=false;more.hidden=!nextPage;showError('');
+  }
+  async function play(item,userGesture=true){
+    if(!account||!clean(item))return;
+    pause();current={...item};showingHistory=false;el('youtube-history-panel').hidden=true;showError('');
+    stage.hidden=false;area.classList.add('yt-watching','yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded','false');
+    el('youtube-video-title').textContent=item.title;el('youtube-video-channel').textContent=item.channel;el('youtube-open').href='https://www.youtube.com/watch?v='+item.video;
+    const frame=destroyPlayer(),version=playerVersion,generation=epoch;
+    const params=new URLSearchParams({playsinline:'1',enablejsapi:'1',origin:window.location.origin,start:String(Math.floor(item.position))});
+    frame.title=item.title;frame.src=`https://www.youtube-nocookie.com/embed/${item.video}?${params}`;results.hidden=false;
+    if(userGesture){current.updated=Date.now()/1000;remember(current);pending.set(item.video,{...current});sync();}
+    stage.scrollIntoView({behavior:'auto',block:'start'});
+    try{
+      await loadAPI();if(version!==playerVersion||generation!==epoch||!active)return;
+      yt=new window.YT.Player(frame,{events:{
+        onReady:event=>{
+          if(version!==playerVersion||generation!==epoch)return;
+          resumeTarget=item.position>0?item.position:null;resumeDeadline=Date.now()+5000;
+          if(item.position>0)event.target.seekTo(item.position,true);ready=true;
+          if(userGesture)event.target.playVideo();else event.target.pauseVideo();
+          clearInterval(timer);timer=setInterval(()=>{snapshot();if(Date.now()-lastSync>10000)sync();},1000);
+        },
+        onStateChange:()=>{if(version===playerVersion&&generation===epoch){snapshot();sync();}},
+        onError:event=>{if(version!==playerVersion||generation!==epoch)return;
+          const messages={100:'This video is no longer available.',101:'This creator does not allow embedded playback. Open it on YouTube.',150:'This creator does not allow embedded playback. Open it on YouTube.',153:'YouTube could not verify this embed. Open the video on YouTube or reload Node.'};
+          showError(messages[event.data]||'This video could not play. Try another video or open it on YouTube.');
+        }
+      }});
+    }catch(failure){if(version===playerVersion&&generation===epoch)showError(failure.message);}
+  }
+  function card(item,historyCard=false){
+    const button=document.createElement('button');button.type='button';button.className='youtube-result';button.setAttribute('aria-label',`Play ${item.title}${item.position?' from '+time(item.position):''}`);
+    const image=document.createElement('img');image.className='youtube-thumb';image.src=`https://i.ytimg.com/vi/${item.video}/hqdefault.jpg`;image.alt='';image.loading='lazy';
+    const heading=document.createElement('span');heading.className='youtube-result-title';heading.textContent=item.title;
+    const channel=document.createElement('span');channel.className='youtube-channel';channel.textContent=item.channel;button.append(image,heading,channel);
+    if(historyCard){
+      const progress=document.createElement('progress');progress.max=item.duration||1;progress.value=item.position;progress.setAttribute('aria-label','Video progress');
+      const detail=document.createElement('span');detail.className='yt-watch-time';detail.textContent=`${time(item.position)}${item.duration?' / '+time(item.duration):''} · ${new Date(item.updated*1000).toLocaleString()}`;button.append(progress,detail);
     }
+    button.addEventListener('click',()=>play(history.find(row=>row.video===item.video)||item));return button;
+  }
+  function showHistory(){
+    home();showingHistory=true;more.hidden=true;results.hidden=true;el('youtube-history-panel').hidden=false;
+    el('youtube-history-list').replaceChildren(...history.map(item=>card(item,true)));el('youtube-history-empty').hidden=history.length>0;el('youtube-history').setAttribute('aria-current','page');
+    el('youtube-home').setAttribute('aria-current','false');status(`${history.length} recent video${history.length===1?'':'s'}`);el('youtube-history-title').focus();
+  }
+  async function search(append=false){
+    if(loading||!account)return;
+    const version=++searchVersion,generation=epoch;loading=true;searchButton.disabled=more.disabled=true;showError('');status('Searching YouTube…');
+    try{
+      const data=await api('search',{q:lastQuery,...(append&&nextPage?{pageToken:nextPage}:{})});if(version!==searchVersion||generation!==epoch)return;
+      let added=0;
+      for(const item of data.items||[]){if(!validId(item?.id?.videoId))continue;
+        results.append(card({video:item.id.videoId,title:String(item.snippet?.title||'YouTube video'),channel:String(item.snippet?.channelTitle||'YouTube'),position:0,duration:0,updated:Date.now()/1000}));added++;
+      }
+      nextPage=data.nextPageToken||'';more.hidden=!nextPage||(append&&!added);status(results.children.length?`${results.children.length} videos for “${lastQuery}”`:'No videos found. Try a different search.');
+    }catch(failure){if(version===searchVersion&&generation===epoch){showError(failure.message);status('Search did not finish. Submit your search again to retry.');}}
+    finally{if(version===searchVersion&&generation===epoch){loading=false;searchButton.disabled=more.disabled=false;}}
+  }
+  function searchFor(query){if(loading||!query.trim())return;lastQuery=query.trim();el('youtube-query').value=lastQuery;home();results.replaceChildren();nextPage='';more.hidden=true;search();}
+  async function saveKey(value){
+    const generation=epoch;el('youtube-save-key').disabled=true;
+    try{const data=await api('key',{key:value});if(generation!==epoch)return;keyInput.value='';try{localStorage.removeItem('node.youtube.apiKey.v1');}catch(_){}
+      el('youtube-key-status').textContent=data.configured?'Shared search is ready for every account.':'Shared search key removed.';settings.open=!data.configured;
+    }catch(failure){if(generation===epoch)el('youtube-key-status').textContent=failure.message;}
+    finally{if(generation===epoch)el('youtube-save-key').disabled=false;}
+  }
+  el('youtube-form').addEventListener('submit',event=>{event.preventDefault();searchFor(el('youtube-query').value);});
+  for(const id of ['youtube-home','youtube-brand','youtube-all','youtube-back'])el(id).addEventListener('click',home);
+  for(const button of document.querySelectorAll('[data-youtube-query]'))button.addEventListener('click',()=>searchFor(button.dataset.youtubeQuery));
+  el('youtube-history').addEventListener('click',showHistory);el('youtube-history-top').addEventListener('click',showHistory);
+  el('youtube-menu').addEventListener('click',()=>{const collapsed=area.classList.toggle('yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded',String(!collapsed));});
+  el('youtube-setup-toggle').addEventListener('click',()=>{settings.open=!settings.open;if(settings.open)keyInput.focus();});
+  el('youtube-save-key').addEventListener('click',()=>saveKey(keyInput.value.trim()));el('youtube-remove-key').addEventListener('click',()=>saveKey(''));
+  more.addEventListener('click',()=>{if(nextPage)search(true);});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){snapshot();sync();}});window.addEventListener('pagehide',()=>{snapshot();sync();});
+  return {
+    onAccount(next){
+      pause();epoch++;account=next?{...next,id:next.id??'name:'+next.name.normalize('NFKC').toLowerCase()}:null;history=[];current=null;pending=new Map();syncBusy=false;lastSync=0;searchVersion++;loading=false;ready=false;
+      destroyPlayer();results.replaceChildren();el('youtube-history-list').replaceChildren();el('youtube-query').value='';nextPage='';lastQuery='';stage.hidden=true;el('youtube-history-panel').hidden=true;showingHistory=false;area.classList.remove('yt-watching');showError('');
+      keyInput.value='';settings.open=false;settings.hidden=!next?.admin;el('youtube-setup-toggle').hidden=!next?.admin;el('youtube-key-status').textContent='';el('youtube-history-status').textContent='History is private to your account.';searchButton.disabled=more.disabled=false;more.hidden=true;
+      el('youtube-video-title').textContent='';el('youtube-video-channel').textContent='';el('youtube-open').href='https://www.youtube.com/';
+      if(!next)return;
+      try{history=JSON.parse(localStorage.getItem(storageKey())||'[]').filter(clean).slice(0,200);}catch(_){history=[];}
+      const generation=epoch;
+      Promise.all([api('config'),api('history')]).then(async([config,data])=>{
+        if(generation!==epoch)return;
+        const merged=new Map((data.items||[]).filter(clean).map(item=>[item.video,item]));
+        for(const item of history){if(!merged.has(item.video)||merged.get(item.video).updated<item.updated){merged.set(item.video,item);pending.set(item.video,item);}}
+        history=[...merged.values()].sort((a,b)=>b.updated-a.updated).slice(0,200);persist();sync();
+        if(!config.configured&&next.admin){let legacy='';try{legacy=localStorage.getItem('node.youtube.apiKey.v1')||'';}catch(_){}
+          if(legacy)await saveKey(legacy);else{settings.open=true;el('youtube-key-status').textContent='Save your key once here to enable search for all accounts.';}
+        }
+        if(generation!==epoch)return;
+        if(active&&!current&&!showingHistory&&history.length)play(history[0],false);if(showingHistory)showHistory();
+      }).catch(()=>{if(generation===epoch)el('youtube-history-status').textContent='Account history is offline. Videos saved on this device are still available.';});
+    },
+    onNavigate(which){active=which==='youtube';if(!active){pause();return;}if(current)play(current,false);else if(history.length)play(history[0],false);else status('Search YouTube to find your next video.');}
   };
 })();
-

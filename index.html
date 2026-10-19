@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
-  <link rel="stylesheet" href="youtube.css?v=20261014-center-v3">
+  <link rel="stylesheet" href="youtube.css?v=20261019-history-v1">
   <link rel="stylesheet" href="node-nav.css?v=20261014-player-v2">
-  <link rel="stylesheet" href="imposter.css?v=20261014-game-v1">
+  <link rel="stylesheet" href="imposter.css?v=20261019-ballots-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -235,9 +235,9 @@
           <article class="game-tile"><h3>Have a code?</h3><form id="game-join-form"><label for="game-code">Lobby code</label><input id="game-code" autocomplete="off" maxlength="6" minlength="6" placeholder="ABC123" required><button class="btn-login" type="submit">Join lobby</button></form></article>
         </div>
         <div id="game-room" hidden>
-          <div class="lobby-header"><div><h3 id="lobby-code" aria-label="Lobby code"></h3><span id="game-phase-label">Lobby open</span></div><button id="game-leave" class="btn-logout">Leave lobby</button></div>
+          <div class="lobby-header"><div><h3 id="lobby-code" aria-label="Lobby code"></h3><span id="game-phase-label">Lobby open</span></div><div class="lobby-actions"><button id="game-end" class="pc-action" hidden>End round</button><button id="game-leave" class="btn-logout">Leave lobby</button></div></div>
           <p id="game-instructions" class="dash-subtitle"></p>
-          <div class="lobby-grid"><section class="game-tile"><h3>Who's in?</h3><ul id="game-players"></ul><label for="game-topic">Topic</label><select id="game-topic"></select><button id="game-start" class="btn-login">Start round</button><button id="game-end" class="pc-action" hidden>End round</button></section>
+          <div class="lobby-grid"><section class="game-tile"><h3>Who's in?</h3><ul id="game-players"></ul><label for="game-topic">Topic</label><select id="game-topic"></select><button id="game-start" class="btn-login">Start round</button></section>
           <section class="game-tile role-tile"><div id="game-role-idle"><svg class="role-seal" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4L40 12V25C40 35 30 42 24 44C18 42 8 35 8 25V12Z"/><path d="M18 24H30M24 18V30"/></svg><h3 id="game-stage-title">Your secret awaits.</h3><p id="game-stage-copy">When the round starts, only you can see your card.</p></div><div id="game-countdown" role="status" aria-live="assertive" hidden></div><div id="game-card" hidden><svg class="role-seal" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4L40 12V25C40 35 30 42 24 44C18 42 8 35 8 25V12Z"/><path d="M18 24H30M24 18V30"/></svg><h3 id="game-player-name"></h3><button id="game-reveal" class="btn-login" aria-expanded="false" aria-controls="game-secret">Reveal</button><p id="game-secret" hidden aria-live="polite"></p><p class="role-privacy">Keep this between us.</p></div></section></div>
           <section class="game-tile lobby-chat" aria-labelledby="game-chat-title">
             <h3 id="game-chat-title">Lobby chat</h3>
@@ -247,7 +247,10 @@
             <form id="game-chat-form"><div class="chat-compose"><input id="game-chat-input" aria-label="Chat message" maxlength="500" autocomplete="off" placeholder="Say something…" required><button id="game-chat-send" class="btn-login" type="submit">Send</button></div></form>
             <p id="game-chat-error" role="status"></p>
           </section>
-          <section class="vote-panel"><button id="game-vote-ready" class="pc-action" hidden>Ready to vote</button><div id="game-voting" hidden><label for="game-vote-choice">Who is the imposter?</label><select id="game-vote-choice"></select><button id="game-vote-lock" class="pc-action">Lock in vote</button><p id="game-vote-status"></p></div><p id="game-result" role="status" hidden></p></section>
+          <section class="vote-panel"><button id="game-vote-ready" class="pc-action" hidden>Ready to vote</button>
+            <div id="game-voting" hidden aria-labelledby="ballot-title"><div class="ballot-heading"><h3 id="ballot-title">Who's bluffing?</h3><span id="game-vote-count"></span></div><p class="ballot-copy">Read the room. Make your call.</p><progress id="game-vote-progress" aria-label="Locked votes" max="16" value="0"></progress><fieldset class="ballot-fieldset"><legend>Choose the imposter</legend><div id="game-ballots" class="ballot-grid"></div></fieldset><input id="game-vote-choice" type="hidden"><button id="game-vote-lock" class="pc-action" disabled>Choose a player</button><p id="game-vote-status" role="status"></p></div>
+            <section id="game-result" hidden aria-labelledby="game-result-title"><svg class="verdict-mark" viewBox="0 0 96 64" aria-hidden="true"><path d="M5 32C26 1 70 1 91 32C70 63 26 63 5 32Z"/><circle cx="48" cy="32" r="14"/><path d="M48 18v28"/></svg><h3 id="game-result-title"></h3><p id="game-result-copy" role="status"></p><div id="game-result-votes"></div><p class="result-next">The truth is out. Ready for another round?</p></section>
+          </section>
         </div>
       </section>
       <section id="youtube-area" class="youtube-area" hidden aria-labelledby="youtube-title">
@@ -258,11 +261,13 @@
         <form id="youtube-form" class="youtube-form" role="search">
           <div class="youtube-input-row"><input id="youtube-query" type="search" aria-label="Search YouTube videos" autocomplete="off" spellcheck="false" maxlength="100" placeholder="Search" required><button id="youtube-search" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button></div>
         </form>
-          <button id="youtube-setup-toggle" class="yt-icon-button" type="button" aria-label="Open search settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button>
+          <button id="youtube-history-top" class="yt-icon-button" type="button" aria-label="Watch history" title="Watch history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6M12 7v5l3 2"/></svg></button>
+          <button id="youtube-setup-toggle" class="yt-icon-button" type="button" aria-label="Open search settings" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button>
         </header>
         <div class="yt-shell">
           <aside id="youtube-sidebar" class="yt-sidebar" aria-label="Video navigation">
             <button id="youtube-home" class="yt-sidebar-button" type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3z"/></svg><span>Home</span></button>
+            <button id="youtube-history" class="yt-sidebar-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6M12 7v5l3 2"/></svg><span>History</span></button>
             <button class="yt-sidebar-button" type="button" data-youtube-query="gaming"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10c3 0 4 3 4 8s-3 5-6 1H9c-3 4-6 4-6-1s1-8 4-8zM6 12h4M8 10v4M15 12h.01M18 13h.01"/></svg><span>Gaming</span></button>
             <button class="yt-sidebar-button" type="button" data-youtube-query="music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 8l12-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="18" cy="16" rx="3" ry="2"/></svg><span>Music</span></button>
             <button class="yt-sidebar-button" type="button" data-youtube-query="educational tutorials"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zM6 10v7c4 3 8 3 12 0v-7M22 8v8"/></svg><span>Learning</span></button>
@@ -271,9 +276,10 @@
           </aside>
           <div class="yt-content">
             <div id="youtube-topics" class="yt-topics" aria-label="Video topics"><button type="button" id="youtube-all" aria-pressed="true">All</button><button type="button" data-youtube-query="Rainbow Six Siege">Rainbow Six Siege</button><button type="button" data-youtube-query="gaming">Gaming</button><button type="button" data-youtube-query="music">Music</button><button type="button" data-youtube-query="technology">Technology</button><button type="button" data-youtube-query="science">Science</button></div>
-        <details id="youtube-settings" class="youtube-settings"><summary>Search setup</summary><div class="youtube-settings-body"><p>Search uses the official YouTube Data API. Add a browser-restricted API key to enable results. The key stays in this browser and is sent to Google when you search.</p><label for="youtube-api-key">YouTube Data API key</label><div class="youtube-key-row"><input id="youtube-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"><button id="youtube-save-key" type="button" class="pc-action">Save key</button><button id="youtube-remove-key" type="button" class="pc-action">Remove</button></div><a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener noreferrer">How to get an API key</a><p id="youtube-key-status" role="status"></p></div></details>
+        <details id="youtube-settings" class="youtube-settings" hidden><summary>Shared search settings</summary><div class="youtube-settings-body"><p>Owner only. Save your key once to enable search for every account. It stays on your home server, never in public website files. In Google Cloud, enable YouTube Data API v3 and restrict this key to that API. Website-referrer restrictions do not work with server search.</p><label for="youtube-api-key">YouTube Data API key</label><div class="youtube-key-row"><input id="youtube-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"><button id="youtube-save-key" type="button" class="pc-action">Save shared key</button><button id="youtube-remove-key" type="button" class="pc-action">Remove</button></div><a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener noreferrer">Google Cloud key setup</a><p id="youtube-key-status" role="status"></p></div></details>
         <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
         <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
+        <section id="youtube-history-panel" hidden aria-labelledby="youtube-history-title"><h2 id="youtube-history-title" tabindex="-1">Watch history</h2><p id="youtube-history-status" role="status">History is private to your account.</p><p id="youtube-history-empty">Your next video starts your history. Search for something you love.</p><div id="youtube-history-list" class="youtube-results"></div></section>
         <div class="yt-watch-layout">
         <div id="youtube-stage" class="youtube-stage" hidden>
           <div class="yt-player-viewport"><div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
@@ -338,8 +344,8 @@
   </div>
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
-  <script src="portal-client.js?v=20261014-game-v1"></script>
-  <script src="youtube.js?v=20261014-player-v2"></script>
+  <script src="portal-client.js?v=20261019-history-v1"></script>
+  <script src="youtube.js?v=20261019-history-v1"></script>
   <script src="rtc-viewer.js?v=20261014-rtc-v3"></script>
   <script src="app.js?v=20261014-rtc-v3"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">

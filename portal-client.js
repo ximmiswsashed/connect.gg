@@ -6,7 +6,7 @@ window.ConnectPortal = (() => {
   async function api(path,body,method='POST',timeout=12000) {
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
     try {
-      const response=await fetch(base+path,{method,cache:'no-store',signal:controller.signal,
+      const response=await fetch(base+path,{method,cache:'no-store',signal:controller.signal,keepalive:path==='/api/youtube/progress',
         headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},
         ...(method==='GET'?{}:{body:JSON.stringify(body||{})})});
       let data;
@@ -79,19 +79,40 @@ window.ConnectPortal = (() => {
     el('game-vote-ready').hidden=room.phase!=='playing';el('game-vote-ready').disabled=room.voteReady;
     el('game-vote-ready').textContent=room.voteReady?`${room.voteReadyCount||0}/${room.players.length} players want to vote…`:'Ready to vote';
     el('game-voting').hidden=room.phase!=='voting';
-    const select=el('game-vote-choice'),selection=select.value,choices=JSON.stringify(room.players.map(p=>[p.id,p.name]));
+    const select=el('game-vote-choice'),choices=JSON.stringify([room.code,room.round,room.players.map(p=>[p.id,p.name,p.color])]);
     if(select._choices!==choices){select._choices=choices;
-      select.replaceChildren(...room.players.map(p=>{const o=document.createElement('option');o.value=String(p.id);o.textContent=p.name;return o;}));
-      if(room.players.some(p=>String(p.id)===selection))select.value=selection;
+      select.value='';
+      el('game-ballots').replaceChildren(...room.players.map(p=>{
+        const label=document.createElement('label'),input=document.createElement('input'),face=document.createElement('span'),name=document.createElement('span'),check=document.createElement('span');
+        label.className='ballot';input.type='radio';input.name='imposter-ballot';input.value=String(p.id);
+        face.className='ballot-avatar';face.style.color=p.color;face.textContent=p.name.slice(0,1).toUpperCase();face.setAttribute('aria-hidden','true');
+        name.className='ballot-name';name.textContent=p.name;check.className='ballot-check';check.setAttribute('aria-hidden','true');
+        input.addEventListener('change',()=>{select.value=input.value;el('game-vote-lock').disabled=false;el('game-vote-lock').textContent='Lock vote for '+p.name;});
+        label.append(input,face,name,check);return label;
+      }));
     }
-    select.disabled=!!room.voteLocked;el('game-vote-lock').disabled=!!room.voteLocked;
-    el('game-vote-status').textContent=room.voteLocked?'Vote locked · '+room.lockedCount+'/'+room.players.length+' ready':'Choose the imposter. Your vote cannot be changed.';
+    for(const input of el('game-ballots').querySelectorAll?.('input')||[])input.disabled=!!room.voteLocked;
+    el('game-voting').classList.toggle('is-locked',!!room.voteLocked);
+    el('game-vote-lock').disabled=!!room.voteLocked||!select.value;
+    if(room.voteLocked)el('game-vote-lock').textContent='Vote sealed';else if(!select.value)el('game-vote-lock').textContent='Choose a player';
+    el('game-vote-count').textContent=`${room.lockedCount||0} / ${room.players.length} locked`;
+    el('game-vote-progress').max=room.players.length;el('game-vote-progress').value=room.lockedCount||0;
+    const voteStatus=room.voteLocked?'Your vote is sealed. Waiting for the others…':'Your vote stays private until everyone has locked in.';
+    if(el('game-vote-status').textContent!==voteStatus)el('game-vote-status').textContent=voteStatus;
     el('game-result').hidden=room.phase!=='result';
-    el('game-result').textContent=room.phase==='result'?(room.result.winner==='players'?'Players win! ':'Imposter wins! ')+room.result.imposter+' was the imposter.'+(room.result.tie?' The vote was tied.':''):'';
+    if(room.phase==='result'){
+      el('game-result').classList.toggle('imposter-won',room.result.winner!=='players');
+      el('game-result-title').textContent=room.result.winner==='players'?'Caught in the act.':'The imposter fooled you.';
+      el('game-result-copy').textContent=room.result.imposter+' was the imposter. '+(room.result.winner==='players'?'Players win!':'Imposter wins!')+(room.result.tie?' The vote was tied.':'');
+      if(phaseChanged)el('game-result-votes').replaceChildren(...(room.result.votes||[]).map(vote=>{
+        const row=document.createElement('div'),name=document.createElement('span'),bar=document.createElement('progress'),count=document.createElement('span');
+        name.textContent=vote.name;bar.max=room.players.length;bar.value=vote.count;bar.setAttribute('aria-label',vote.name+' votes');count.textContent=String(vote.count);row.append(name,bar,count);return row;
+      }));
+    }
     el('game-instructions').textContent=room.phase==='waiting'?'Invite at least 3 players. Share the code to join.':room.phase==='countdown'?'Get ready…':room.phase==='voting'?'Everyone locks in one vote. A majority must identify the imposter.':room.phase==='result'?'Round complete. The host can end this round to play again.':'Take turns giving a clue. Who is the imposter?';
     if(phaseChanged&&['playing','voting','result'].includes(room.phase))animate(
       el(room.phase==='result'?'game-result':room.phase==='voting'?'game-voting':'game-card'),
-      [{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],380);
+      [{opacity:.35,clipPath:'inset(0 0 100% 0)'},{opacity:1,clipPath:'inset(0 0 0 0)'}],600);
   }
   function animate(node,frames,duration){
     if(!node.animate||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return;
@@ -134,7 +155,8 @@ window.ConnectPortal = (() => {
   }
   async function login(name,password) {
     if(registering){await api('/api/register',{name,password});}
-    const result=await api('/api/login',{name,password});token=result.token;user=result.user;generation++;
+    const result=await api('/api/login',{name,password});window.NodeYouTube?.onAccount(null);token=result.token;user=result.user;generation++;
+    window.NodeYouTube?.onAccount(user);
     el('signed-in-name').textContent=user.name+(user.admin?' · Admin':'');el('nav-computers').hidden=false;
     const topics=await api('/api/topics',null,'GET');
     el('game-topic').replaceChildren(...topics.topics.map(topic=>{const option=document.createElement('option');option.value=option.textContent=topic;return option;}));
@@ -146,7 +168,7 @@ window.ConnectPortal = (() => {
     el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
     return user;
   }
-  function logout(){generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter');window.NodeYouTube?.onNavigate('');}
+  function logout(){window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter');window.NodeYouTube?.onNavigate('');}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
     el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
@@ -203,5 +225,8 @@ window.ConnectPortal = (() => {
     button.append(wave);setTimeout(()=>wave.remove(),650);
   });
   document.addEventListener('visibilitychange',()=>document.body.classList.toggle('motion-paused',document.hidden));
-  return {login,logout,view};
+  return {login,logout,view,request:(path,data)=>{
+    if(!token||!path.startsWith('/api/youtube/'))return Promise.reject(new Error('Please sign in again.'));
+    return api(path,data,'POST',16000);
+  }};
 })();
