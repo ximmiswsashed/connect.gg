@@ -78,7 +78,7 @@ window.NodeYouTube = (() => {
     area.querySelector('.youtube-frame').replaceChildren(frame);return frame;
   }
   function home(){
-    pause();showToolbar(true);showingHistory=false;el('youtube-history-panel').hidden=true;
+    pause();destroyPlayer();showToolbar(true);showingHistory=false;el('youtube-history-panel').hidden=true;
     area.classList.remove('yt-watching','yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded','true');stage.hidden=true;
     el('youtube-home').setAttribute('aria-current','page');el('youtube-history').setAttribute('aria-current','false');results.hidden=false;more.hidden=!nextPage;showError('');
   }
