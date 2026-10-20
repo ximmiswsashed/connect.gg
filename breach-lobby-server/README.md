@@ -10,7 +10,7 @@ The game is served from `/connect.gg/oregon/` on GitHub Pages. Its room service 
 - Invalid, missing, full, started and incompatible rooms have actionable errors. Departed guests disappear; they can rejoin before the match. Closing the host expires the code. Automatic mid-match resume is not implemented.
 - Dead connections have heartbeat/timeout detection and bounded send queues. The host must keep the page and service running.
 
-## Home PC setup — public activation pending
+## Home PC setup
 
 1. Install dependencies in `breach-lobby-server` with `pnpm install` (or `npm install`). The downloadable delivery also includes the installed `ws` dependency.
 2. Run `Start Lobby Service.cmd` on the home PC.
@@ -19,7 +19,7 @@ The game is served from `/connect.gg/oregon/` on GitHub Pages. Its room service 
 
 Endpoint: `wss://mhm.tail8dfc7f.ts.net/breach/lobby`, configured in `oregon/lobby-config.json`. The service allows the exact GitHub Pages origin and the existing home HTTPS origin. It listens on loopback; no router or firewall rule is added.
 
-Activation is not completed: automatic approval review rejected starting the service with GitHub-origin access, returning only `blocked by policy`. No public Funnel route was changed. Local tests do not prove connectivity from a school's network; a network that blocks the home address can still prevent joining.
+Public activation was completed on October 20, 2026 after the user started the service on the home PC. HTTPS health and four-letter hosting/joining passed through the actual public Funnel route with the GitHub Pages Origin. The root and8443 routes remain intact. Keep the home service and host page open while playing. Connectivity from the school's network remains unverified.
 
 ## Validation
 
