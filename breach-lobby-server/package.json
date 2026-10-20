@@ -1,0 +1,16 @@
+{
+  "name": "breach-lobby-server",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node tools/serve-checkpoint.mjs ../oregon 5311",
+    "test": "node tests/lobby-codes.mjs"
+  },
+  "dependencies": {
+    "ws": "8.22.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
