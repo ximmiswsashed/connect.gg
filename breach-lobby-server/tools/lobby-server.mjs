@@ -9,7 +9,7 @@ export function attachLobbyServer(server,{maxRooms=2000,heartbeatMs=10000,allowe
  function drop(client){const room=client.room;if(!room)return;client.room=null;if(client.id===room.host.id){rooms.delete(room.code);for(const guest of room.guests.values()){guest.room=null;send(guest.ws,{type:'ended',message:'The host closed this lobby. Ask them for a new code.'});guest.ws.close(1000,'Host left');}room.guests.clear();}else if(room.guests.delete(client.id))send(room.host.ws,{type:'left',id:client.id});}
  const fail=(ws,message)=>send(ws,{type:'error',message});
  const upgrade=(req,socket,head)=>{
-  if(new URL(req.url,'http://localhost').pathname!=='/lobby')return;
+  if(!['/lobby','/breach/lobby'].includes(new URL(req.url,'http://localhost').pathname))return;
   // Browser requests must come from the same host, including behind an HTTPS proxy.
   const origin=req.headers.origin;let valid=true;
   try{if(origin)valid=new URL(origin).host===req.headers.host||allowedOrigins.includes(origin);}catch{valid=false;}

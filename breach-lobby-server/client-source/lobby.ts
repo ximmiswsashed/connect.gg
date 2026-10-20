@@ -38,7 +38,8 @@ export class Lobby{
      if(p.type==='pong'){this.pingMs=Math.max(0,Math.round(performance.now()-p.time));}
     };
    });
-   this.relayTimer=setInterval(()=>{if(epoch!==this.relayEpoch)return;if(performance.now()-lastMessage>15000){this.relayDisconnected('Connection timed out. Create or join the lobby again.');return;}if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',time:performance.now()}));this.flushReliable();},1000);
+   let lastTick=performance.now();
+   this.relayTimer=setInterval(()=>{if(epoch!==this.relayEpoch)return;const now=performance.now();if(now-lastTick>5000)lastMessage=now;lastTick=now;if(now-lastMessage>15000){this.relayDisconnected('Connection timed out. Create or join the lobby again.');return;}if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping',time:now}));this.flushReliable();},1000);
   }catch(error){if(epoch===this.relayEpoch){this.leave();this.status=(error as Error).message;this.onChange();}throw error;}
  }
  private addRelayPeer(id:string){if(!this.relaySocket||this.peers.has(id))return;const channel=new RelayChannel(this.relaySocket,id,()=>{if(this.mode==='host'&&this.relaySocket?.readyState===WebSocket.OPEN)this.relaySocket.send(JSON.stringify({type:'kick',id}));});const peer:Peer={id,pc:null,channel,reliable:[]};this.peers.set(id,peer);this.wire(peer);channel.open();}
