@@ -74,7 +74,7 @@ function renderMenu(){ui.classList.remove('hidden');hud.innerHTML='';game.audio.
  if(lobby.selection?.active)content=selectionBanner(lobby)+content;
 
 if(softwareRenderer&&page==='play')content='<section class="settings-block" style="margin:24px"><h2>GPU acceleration unavailable</h2>'+rendererStatusHTML(rendererName)+'</section>'+content;
-ui.innerHTML=shell(content);wire();const input=ui.querySelector<HTMLInputElement>('#connection-input');if(input)input.value=connectionInput;if(lobby.connecting)ui.querySelectorAll<HTMLButtonElement>('#host-lobby,#connect-peer').forEach(b=>{b.disabled=true;b.textContent='Connecting�';});}
+ui.innerHTML=shell(content);wire();const input=ui.querySelector<HTMLInputElement>('#connection-input');if(input)input.value=connectionInput;if(lobby.connecting)ui.querySelectorAll<HTMLButtonElement>('#host-lobby,#connect-peer').forEach(b=>{b.disabled=true;b.textContent='Connecting...';});}
 
 function wire(){ui.querySelector('#selection-ready')?.addEventListener('click',()=>{updateProfile();lobby.confirm();});ui.querySelectorAll<HTMLButtonElement>('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page!;if(b.dataset.lobbyIntent)lobbyIntent=b.dataset.lobbyIntent as 'host'|'join';renderMenu();});ui.querySelectorAll<HTMLButtonElement>('[data-op]').forEach(b=>b.onclick=()=>{selectedOp=Number(b.dataset.op);selectedWeapon=operators[selectedOp].weapon;updateProfile();renderMenu();});ui.querySelectorAll<HTMLButtonElement>('[data-weapon]').forEach(b=>b.onclick=()=>{selectedWeapon=validatedWeapon(selectedOp,Number(b.dataset.weapon));updateProfile();renderMenu();});
 
@@ -197,6 +197,7 @@ addEventListener('pagehide',event=>{if(event.persisted)return;session.stop();rep
 }
 
 void boot().catch(e=>{document.querySelector('#ui')!.textContent='Map loading failed: '+e.message;console.error(e);});
+
 
 
 
