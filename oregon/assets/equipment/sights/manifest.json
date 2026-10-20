@@ -1,0 +1,132 @@
+[
+  {
+    "name": "Red Dot Sight NATO",
+    "file": "Red-Dot-Sight-NATO.glb",
+    "polygons": 2908,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Red Dot Sight NATO browser",
+      "Sight Lens Interior Generic browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Mounting Rail Piece",
+    "file": "Mounting-Rail-Piece.glb",
+    "polygons": 304,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Rail Piece browser"
+    ]
+  },
+  {
+    "name": "Holographic Sight NATO",
+    "file": "Holographic-Sight-NATO.glb",
+    "polygons": 2836,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Holographic Sight NATO browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "ACOG NATO",
+    "file": "ACOG-NATO.glb",
+    "polygons": 3528,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "ACOG NATO browser",
+      "Sight Lens Interior Generic browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Holographic Sight Mozzie",
+    "file": "Holographic-Sight-Mozzie.glb",
+    "polygons": 3184,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Holographic Sight Mozzie browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Reflex Sight Nomad",
+    "file": "Reflex-Sight-Nomad.glb",
+    "polygons": 1668,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Reflex Sight Nomad browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Reflex Sight NATO",
+    "file": "Reflex-Sight-NATO.glb",
+    "polygons": 2188,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Reflex Sight NATO browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Holographic Sight RUSSIAN",
+    "file": "Holographic-Sight-RUSSIAN.glb",
+    "polygons": 2058,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Holographic Sight RUSSIAN browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "Red Dot Sight RUSSIAN",
+    "file": "Red-Dot-Sight-RUSSIAN.glb",
+    "polygons": 2086,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "Red Dot Sight RUSSIAN browser",
+      "Sight Lens Generic browser"
+    ]
+  },
+  {
+    "name": "ACOG RUSSIAN",
+    "file": "ACOG-RUSSIAN.glb",
+    "polygons": 2786,
+    "uvLayers": [
+      "UVMap"
+    ],
+    "materials": [
+      "ACOG RUSSIAN browser",
+      "Sight Lens Interior Generic browser",
+      "Sight Lens Generic browser",
+      "Sight Lens Generic browser"
+    ]
+  }
+]

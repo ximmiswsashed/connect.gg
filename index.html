@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
   <link rel="stylesheet" href="youtube.css?v=20261019-history-v1">
-  <link rel="stylesheet" href="node-nav.css?v=20261014-player-v2">
+  <link rel="stylesheet" href="node-nav.css?v=20261019-shooter-v1">
   <link rel="stylesheet" href="imposter.css?v=20261019-ballots-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
@@ -138,6 +138,7 @@
           <button id="nav-computers" type="button" aria-current="page">Computers</button>
           <button id="nav-game" type="button">Imposter</button>
           <button id="nav-youtube" type="button">YouTube</button>
+          <button id="nav-shooter" type="button">Breach Protocol</button>
         </nav>
         <button id="menu-toggle" class="btn-logout" aria-controls="side-menu" aria-expanded="false">Menu</button>
         <span id="signed-in-name" class="signed-in-name"></span>
@@ -262,7 +263,6 @@
           <div class="youtube-input-row"><input id="youtube-query" type="search" aria-label="Search YouTube videos" autocomplete="off" spellcheck="false" maxlength="100" placeholder="Search" required><button id="youtube-search" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button></div>
         </form>
           <button id="youtube-history-top" class="yt-icon-button" type="button" aria-label="Watch history" title="Watch history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6M12 7v5l3 2"/></svg></button>
-          <button id="youtube-setup-toggle" class="yt-icon-button" type="button" aria-label="Open search settings" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></button>
         </header>
         <div class="yt-shell">
           <aside id="youtube-sidebar" class="yt-sidebar" aria-label="Video navigation">
@@ -276,7 +276,6 @@
           </aside>
           <div class="yt-content">
             <div id="youtube-topics" class="yt-topics" aria-label="Video topics"><button type="button" id="youtube-all" aria-pressed="true">All</button><button type="button" data-youtube-query="Rainbow Six Siege">Rainbow Six Siege</button><button type="button" data-youtube-query="gaming">Gaming</button><button type="button" data-youtube-query="music">Music</button><button type="button" data-youtube-query="technology">Technology</button><button type="button" data-youtube-query="science">Science</button></div>
-        <details id="youtube-settings" class="youtube-settings" hidden><summary>Shared search settings</summary><div class="youtube-settings-body"><p>Owner only. Save your key once to enable search for every account. It stays on your home server, never in public website files. In Google Cloud, enable YouTube Data API v3 and restrict this key to that API. Website-referrer restrictions do not work with server search.</p><label for="youtube-api-key">YouTube Data API key</label><div class="youtube-key-row"><input id="youtube-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"><button id="youtube-save-key" type="button" class="pc-action">Save shared key</button><button id="youtube-remove-key" type="button" class="pc-action">Remove</button></div><a href="https://developers.google.com/youtube/v3/getting-started" target="_blank" rel="noopener noreferrer">Google Cloud key setup</a><p id="youtube-key-status" role="status"></p></div></details>
         <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
         <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
         <section id="youtube-history-panel" hidden aria-labelledby="youtube-history-title"><h2 id="youtube-history-title" tabindex="-1">Watch history</h2><p id="youtube-history-status" role="status">History is private to your account.</p><p id="youtube-history-empty">Your next video starts your history. Search for something you love.</p><div id="youtube-history-list" class="youtube-results"></div></section>
@@ -292,6 +291,10 @@
         <p class="youtube-note">School account and network restrictions still apply.</p>
           </div>
         </div>
+      </section>
+      <section id="shooter-area" hidden aria-labelledby="shooter-title">
+        <div id="shooter-intro"><svg class="shooter-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 24V8h16M40 8h16v16M56 40v16H40M24 56H8V40M22 32h20M32 22v20"/></svg><h2 id="shooter-title">Breach Protocol</h2><p class="shooter-description">Your next round starts in Oregon.</p><p class="shooter-details">Play solo with bots or use the game's private lobby to connect with friends. Mouse, keyboard and WebGL2 required.</p><button id="shooter-launch" class="btn-login" type="button">Play now</button><p id="shooter-load-status" role="status" aria-live="polite"></p><p class="shooter-details">The game loads only when you play. Leaving this tab ends your current game.</p></div>
+        <div id="shooter-session" hidden><div class="shooter-toolbar"><h2>Breach Protocol</h2><div><button id="shooter-fullscreen" class="pc-action" type="button">Fullscreen</button><button id="shooter-exit" class="pc-action" type="button">Exit game</button></div></div><div id="shooter-viewport"><iframe id="shooter-frame" title="Breach Protocol — Oregon tactical shooter" src="about:blank" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></div></div>
       </section>
     </main>
 
@@ -344,8 +347,9 @@
   </div>
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
-  <script src="portal-client.js?v=20261019-history-v1"></script>
-  <script src="youtube.js?v=20261019-history-v1"></script>
+  <script src="portal-client.js?v=20261019-shooter-v1"></script>
+  <script src="youtube.js?v=20261019-shared-v2"></script>
+  <script src="shooter.js?v=20261019-game-v1"></script>
   <script src="rtc-viewer.js?v=20261014-rtc-v3"></script>
   <script src="app.js?v=20261014-rtc-v3"></script>
   <dialog id="overlay-choice" aria-labelledby="overlay-title">

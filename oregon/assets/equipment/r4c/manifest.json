@@ -1,0 +1,302 @@
+[
+  {
+    "name": "R4C Charm Holder",
+    "file": "R4C-Charm-Holder.glb",
+    "polygons": 1060,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "Charm Holder browser"
+    ]
+  },
+  {
+    "name": "R4C Iron Sight",
+    "file": "R4C-Iron-Sight.glb",
+    "polygons": 2034,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Iron Sight browser"
+    ]
+  },
+  {
+    "name": "R4C Mag",
+    "file": "R4C-Mag.glb",
+    "polygons": 958,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Mag browser"
+    ]
+  },
+  {
+    "name": "R4C Flash Hider",
+    "file": "R4C-Flash-Hider.glb",
+    "polygons": 944,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "Flash Hider browser"
+    ]
+  },
+  {
+    "name": "R4C Tiger",
+    "file": "R4C-Tiger.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Tiger browser"
+    ]
+  },
+  {
+    "name": "R4C Zebra",
+    "file": "R4C-Zebra.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Zebra browser"
+    ]
+  },
+  {
+    "name": "R4C Elephant",
+    "file": "R4C-Elephant.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Elephant browser"
+    ]
+  },
+  {
+    "name": "R4C Leopard",
+    "file": "R4C-Leopard.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Leopard browser"
+    ]
+  },
+  {
+    "name": "R4C Snake",
+    "file": "R4C-Snake.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Snake browser"
+    ]
+  },
+  {
+    "name": "R4C Gold",
+    "file": "R4C-Gold.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Gold browser"
+    ]
+  },
+  {
+    "name": "R4C Platinum",
+    "file": "R4C-Platinum.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Platinum browser"
+    ]
+  },
+  {
+    "name": "R4C Diamond",
+    "file": "R4C-Diamond.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Diamond browser"
+    ]
+  },
+  {
+    "name": "R4C Spartian Authority",
+    "file": "R4C-Spartian-Authority.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Spartian Authority browser"
+    ]
+  },
+  {
+    "name": "R4C Black Ice",
+    "file": "R4C-Black-Ice.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Black Ice browser"
+    ]
+  },
+  {
+    "name": "R4C Glacier",
+    "file": "R4C-Glacier.glb",
+    "polygons": 15600,
+    "uvLayers": [
+      "uv_0",
+      "uv_1",
+      "uv_2",
+      "uv_3",
+      "uv_4",
+      "uv_5",
+      "uv_6",
+      "uv_7",
+      "uv_8",
+      "uv_9"
+    ],
+    "materials": [
+      "R4C Glacier browser"
+    ]
+  }
+]

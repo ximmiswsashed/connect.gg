@@ -2,7 +2,7 @@
 window.NodeYouTube = (() => {
   const el = id => document.getElementById(id);
   const area=el('youtube-area'),stage=el('youtube-stage'),results=el('youtube-results');
-  const settings=el('youtube-settings'),keyInput=el('youtube-api-key'),error=el('youtube-error');
+  const error=el('youtube-error');
   const searchButton=el('youtube-search'),more=el('youtube-more'),toolbarToggle=el('youtube-toolbar-toggle');
   let account=null,epoch=0,active=false,history=[],current=null,yt=null,playerVersion=0;
   let lastQuery='',nextPage='',loading=false,searchVersion=0,apiPromise=null,ready=false,showingHistory=false;
@@ -140,39 +140,28 @@ window.NodeYouTube = (() => {
     finally{if(version===searchVersion&&generation===epoch){loading=false;searchButton.disabled=more.disabled=false;}}
   }
   function searchFor(query){if(loading||!query.trim())return;lastQuery=query.trim();el('youtube-query').value=lastQuery;home();results.replaceChildren();nextPage='';more.hidden=true;search();}
-  async function saveKey(value){
-    const generation=epoch;el('youtube-save-key').disabled=true;
-    try{const data=await api('key',{key:value});if(generation!==epoch)return;keyInput.value='';try{localStorage.removeItem('node.youtube.apiKey.v1');}catch(_){}
-      el('youtube-key-status').textContent=data.configured?'Shared search is ready for every account.':'Shared search key removed.';settings.open=!data.configured;
-    }catch(failure){if(generation===epoch)el('youtube-key-status').textContent=failure.message;}
-    finally{if(generation===epoch)el('youtube-save-key').disabled=false;}
-  }
   el('youtube-form').addEventListener('submit',event=>{event.preventDefault();searchFor(el('youtube-query').value);});
   for(const id of ['youtube-home','youtube-brand','youtube-all','youtube-back'])el(id).addEventListener('click',home);
   for(const button of document.querySelectorAll('[data-youtube-query]'))button.addEventListener('click',()=>searchFor(button.dataset.youtubeQuery));
   el('youtube-history').addEventListener('click',showHistory);el('youtube-history-top').addEventListener('click',showHistory);
   el('youtube-menu').addEventListener('click',()=>{const collapsed=area.classList.toggle('yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded',String(!collapsed));});
-  el('youtube-setup-toggle').addEventListener('click',()=>{settings.open=!settings.open;if(settings.open)keyInput.focus();});
-  el('youtube-save-key').addEventListener('click',()=>saveKey(keyInput.value.trim()));el('youtube-remove-key').addEventListener('click',()=>saveKey(''));
   more.addEventListener('click',()=>{if(nextPage)search(true);});
   document.addEventListener('visibilitychange',()=>{if(document.hidden){snapshot();sync();}});window.addEventListener('pagehide',()=>{snapshot();sync();});
   return {
     onAccount(next){
       pause();epoch++;account=next?{...next,id:next.id??'name:'+next.name.normalize('NFKC').toLowerCase()}:null;history=[];current=null;pending=new Map();syncBusy=false;lastSync=0;searchVersion++;loading=false;ready=false;
       destroyPlayer();results.replaceChildren();el('youtube-history-list').replaceChildren();el('youtube-query').value='';nextPage='';lastQuery='';stage.hidden=true;el('youtube-history-panel').hidden=true;showingHistory=false;area.classList.remove('yt-watching');showError('');
-      keyInput.value='';settings.open=false;settings.hidden=!next?.admin;el('youtube-setup-toggle').hidden=!next?.admin;el('youtube-key-status').textContent='';el('youtube-history-status').textContent='History is private to your account.';searchButton.disabled=more.disabled=false;more.hidden=true;
+      el('youtube-history-status').textContent='History is private to your account.';searchButton.disabled=more.disabled=false;more.hidden=true;
       el('youtube-video-title').textContent='';el('youtube-video-channel').textContent='';el('youtube-open').href='https://www.youtube.com/';
       if(!next)return;
       try{history=JSON.parse(localStorage.getItem(storageKey())||'[]').filter(clean).slice(0,200);}catch(_){history=[];}
       const generation=epoch;
-      Promise.all([api('config'),api('history')]).then(async([config,data])=>{
+      api('history').then(data=>{
         if(generation!==epoch)return;
         const merged=new Map((data.items||[]).filter(clean).map(item=>[item.video,item]));
         for(const item of history){if(!merged.has(item.video)||merged.get(item.video).updated<item.updated){merged.set(item.video,item);pending.set(item.video,item);}}
         history=[...merged.values()].sort((a,b)=>b.updated-a.updated).slice(0,200);persist();sync();
-        if(!config.configured&&next.admin){let legacy='';try{legacy=localStorage.getItem('node.youtube.apiKey.v1')||'';}catch(_){}
-          if(legacy)await saveKey(legacy);else{settings.open=true;el('youtube-key-status').textContent='Save your key once here to enable search for all accounts.';}
-        }
+        try{localStorage.removeItem('node.youtube.apiKey.v1');}catch(_){}
         if(generation!==epoch)return;
         if(active&&!current&&!showingHistory&&history.length)play(history[0],false);if(showingHistory)showHistory();
       }).catch(()=>{if(generation===epoch)el('youtube-history-status').textContent='Account history is offline. Videos saved on this device are still available.';});

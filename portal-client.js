@@ -145,13 +145,17 @@ window.ConnectPortal = (() => {
   }
   function view(which){
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
+    el('shooter-area').hidden=which!=='shooter';
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.toggle('browsing-youtube',which==='youtube');
+    document.body.classList.toggle('playing-shooter',which==='shooter');
     document.body.classList.remove('nav-open');secretOff();
     el('nav-computers').setAttribute('aria-current',which==='computers'?'page':'false');
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
     el('nav-youtube').setAttribute('aria-current',which==='youtube'?'page':'false');
+    el('nav-shooter').setAttribute('aria-current',which==='shooter'?'page':'false');
     window.NodeYouTube?.onNavigate(which);
+    window.NodeShooter?.onNavigate(which);
   }
   async function login(name,password) {
     if(registering){await api('/api/register',{name,password});}
@@ -168,7 +172,7 @@ window.ConnectPortal = (() => {
     el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
     return user;
   }
-  function logout(){window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter');window.NodeYouTube?.onNavigate('');}
+  function logout(){window.NodeShooter?.onNavigate('');window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter','playing-shooter');window.NodeYouTube?.onNavigate('');}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
     el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
@@ -184,6 +188,7 @@ window.ConnectPortal = (() => {
   });
   function navigate(which){view(which);window.transitionTo?.(el('dashboard-page'));window.scrollTo?.(0,0);}
   el('nav-computers').addEventListener('click',()=>navigate('computers'));el('nav-game').addEventListener('click',()=>navigate('game'));el('nav-youtube').addEventListener('click',()=>navigate('youtube'));
+  el('nav-shooter').addEventListener('click',()=>navigate('shooter'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
