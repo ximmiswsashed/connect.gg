@@ -4,6 +4,7 @@ window.ConnectPortal = (() => {
   let token='',user=null,registering=false,room=null,revealed=false,poll=null,pollBusy=false,generation=0,refreshFailures=0,connectionNotice=false;
   const base=(window.CONNECT_API||'').replace(/\/$/,'');
   async function api(path,body,method='POST',timeout=12000) {
+    const requestToken=token;
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
     try {
       const response=await fetch(base+path,{method,cache:'no-store',signal:controller.signal,keepalive:path==='/api/youtube/progress',
@@ -11,7 +12,14 @@ window.ConnectPortal = (() => {
         ...(method==='GET'?{}:{body:JSON.stringify(body||{})})});
       let data;
       try {data=await response.json();}catch(_){throw new Error('The server needs an update. Please try again shortly.');}
-      if(!response.ok){const error=new Error(data.error||'Please try again.');error.status=response.status;error.retryAfter=data.retryAfter;throw error;}
+      if(!response.ok){const error=new Error(data.error||'Please try again.');error.status=response.status;error.retryAfter=data.retryAfter;
+        if(response.status===401&&requestToken&&requestToken===token&&!['/api/login','/api/register','/api/logout'].includes(path)){
+          // Use the normal sign-out path to release desktop input and clear
+          // private account views. A late response must not end a newer login.
+          token='';el('logout-btn').click();
+          const notice=el('account-error');notice.textContent='Your session expired. Sign in again to continue.';notice.classList.add('visible');
+        }
+        throw error;}
       return data;
     } catch(error) {
       if(error.name==='AbortError')throw new Error('Connection timed out. Retrying…');
@@ -132,7 +140,6 @@ window.ConnectPortal = (() => {
       }
       refreshFailures=0;secretOff();message(error.message);
       if(error.status===404){room=null;el('game-entry').hidden=false;el('game-room').hidden=true;}
-      if(error.status===401){logout();document.getElementById('logout-btn').click();}
     }
     finally{pollBusy=false;}
   }
