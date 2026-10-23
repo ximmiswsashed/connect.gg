@@ -9,7 +9,7 @@
 
 ## Verification
 - TypeScript --noEmit and production Vite build passed.
-- Aim-Gadgets-Checks.json: 163 passing checks covering lean timing/reversal continuity, migration and independent gains, disabled jammer feedback, antenna matrices, installation interruption and remote kit visibility, sided preview completion, finite bounds and draw budgets for 11 utility models.
+- Aim-Gadgets-Checks.json: 165 passing checks covering lean timing/reversal continuity, migration and independent gains, disabled jammer feedback, antenna matrices, installation interruption and remote kit visibility, sided preview completion, finite bounds and draw budgets for 11 utility models. Added dense sampling across fastening transitions: maximum 0.0001-progress hand step is 3.78 mm (barricade) and 0.52 mm (reinforcement), eliminating discrete jumps between targets.
 - Operator-Gadgets.json: 23 existing command/action/physics lifecycle checks passed across Ash, Sledge, Thermite, Mute, Smoke and Vigil.
 - Kit-Compatibility.json: 158 existing loadout/deployable/optic checks passed.
 - Multiplayer-Rounds.json: three actual relay clients at 120/30/60 Hz, bots enabled; 15 checks passed over two team eliminations, round selection/readiness, guest respawn and rejection of stale death snapshots.
