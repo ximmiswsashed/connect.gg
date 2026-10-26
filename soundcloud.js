@@ -159,7 +159,7 @@ window.NodeSoundCloud=(()=>{
     kind='tracks';for(const b of area.querySelectorAll('[data-sc-kind]'))b.setAttribute('aria-pressed',String(b.dataset.scKind==='tracks'));
     el('sc-heading').textContent='Find your next favorite.';el('sc-intro').hidden=false;el('sc-filters').hidden=false;el('sc-more').hidden=true;el('sc-more').disabled=false;el('sc-results').setAttribute('aria-busy','false');
     if(el('sc-playlist-dialog').open)el('sc-playlist-dialog').close();el('sc-comment-list').replaceChildren();el('sc-results').replaceChildren();el('sc-query').value='';query='';rows=[];page={};view='search';resetDetail();error('');status('');
-    if(account){try{const stored=JSON.parse(localStorage.getItem(storageKey())||'{}');queue=(stored.queue||[]).filter(validTrack).slice(0,100);index=Number.isInteger(stored.index)&&stored.index>=0&&stored.index<queue.length?stored.index:-1;position=Math.max(0,Number(stored.position)||0);el('sc-volume').value=String(Math.max(0,Math.min(100,Number(stored.volume)||75)));}catch{}}
+    if(account){try{const stored=JSON.parse(localStorage.getItem(storageKey())||'{}');queue=(stored.queue||[]).filter(validTrack).slice(0,100);index=Number.isInteger(stored.index)&&stored.index>=0&&stored.index<queue.length?stored.index:-1;position=Number.isFinite(Number(stored.position))?Math.max(0,Number(stored.position)):0;const volume=Number(stored.volume);el('sc-volume').value=String(Number.isFinite(volume)?Math.max(0,Math.min(100,volume)):75);}catch{}}
     renderQueue();if(active&&account)config();
   },onNavigate(which){active=which==='soundcloud';if(active&&account)config();else{save();try{widget?.pause();}catch{}}}};
 })();
