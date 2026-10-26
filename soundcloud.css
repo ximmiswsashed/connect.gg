@@ -1,0 +1,81 @@
+/* SoundCloud extends Node's monochrome workspace; styles never touch the viewer. */
+body.browsing-soundcloud .dash-main{max-width:none;padding:0}
+#soundcloud-area{--sc-line:#303034;--sc-muted:#b2b2bc;min-height:100dvh;padding:34px 36px calc(var(--sc-player-height,0px) + 36px);color:var(--ink);background:var(--bg)}
+#soundcloud-area[hidden]{display:none}
+#soundcloud-area *{min-width:0}
+#soundcloud-area button,#soundcloud-area input,#soundcloud-area select,#soundcloud-area textarea{font:inherit}
+#soundcloud-area button{cursor:pointer}
+#soundcloud-area button:disabled{cursor:not-allowed;opacity:.5}
+#soundcloud-area button:focus-visible,#soundcloud-area a:focus-visible,#soundcloud-area input:focus-visible,#soundcloud-area select:focus-visible,#soundcloud-area textarea:focus-visible{outline:2px solid #fff;outline-offset:4px}
+#soundcloud-area .sc-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:28px}
+#soundcloud-area h1{font-size:26px;letter-spacing:-.025em;margin:0;display:flex;align-items:center;gap:10px}
+.sc-logo{width:36px;height:28px;fill:currentColor;flex-shrink:0}
+#sc-search-form{display:flex;flex:1;gap:8px;max-width:700px;margin-inline:auto}
+#sc-query{width:100%;background:#171719;border:1px solid var(--sc-line);border-radius:9px;padding:12px 16px;color:#fff;font-size:16px}
+#soundcloud-area .sc-button{border:1px solid var(--sc-line);border-radius:8px;background:#1c1c1f;color:#f7f7f8;padding:10px 14px;line-height:1.25;min-height:42px;font-weight:600;font-size:14px;transition:background .16s ease-out}
+#soundcloud-area .sc-button:hover{background:#303034}
+#soundcloud-area .sc-primary{background:#f7f7f8;color:#111;border-color:#f7f7f8}
+#soundcloud-area .sc-primary:hover{background:#d8d8df}
+.sc-account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#sc-account-name{color:var(--sc-muted);font-size:14px}
+.sc-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:28px;border-bottom:1px solid var(--sc-line);padding-bottom:12px}
+#soundcloud-area .sc-nav button{border:0;background:transparent;color:var(--sc-muted);padding:10px 14px;font-weight:600;font-size:14px;border-radius:7px}
+#soundcloud-area .sc-nav button[aria-current=page],#soundcloud-area .sc-nav button:hover{color:#fff;background:#242427}
+.sc-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:36px;max-width:1500px;margin:auto}
+.sc-main h2{font-size:28px;line-height:1.25;letter-spacing:-.025em;margin:0 0 12px}
+.sc-subtitle,.sc-note,#sc-status{color:var(--sc-muted);font-size:14px;line-height:1.6}
+#sc-status{min-height:24px;margin:12px 0}
+#sc-error{color:#ffd5d5;background:#281a1a;border-radius:8px;padding:14px 16px;font-size:14px;line-height:1.5;margin-bottom:16px}
+#sc-setup{padding:24px 0 28px;max-width:720px}
+#sc-setup h2{font-size:28px}
+#sc-setup p{font-size:15px;line-height:1.7;color:var(--sc-muted);margin:12px 0;max-width:65ch}
+#sc-setup a,#soundcloud-area .sc-external{color:#f7f7f8;text-decoration:underline;text-underline-offset:4px}
+#sc-setup summary{cursor:pointer;padding:12px 0;font-weight:600}
+#sc-setup ol{padding-left:22px;color:var(--sc-muted);font-size:14px;line-height:1.8}
+#sc-setup code{overflow-wrap:anywhere;color:#eee}
+.sc-filters{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap}
+#soundcloud-area .sc-filters button[aria-pressed=true]{background:#f7f7f8;color:#111}
+#sc-results{display:flex;flex-direction:column}
+.sc-row{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;padding:18px 0;border-bottom:1px solid var(--sc-line);align-items:center;animation:sc-arrive .22s ease-out}
+.sc-cover{width:72px;height:72px;background:#222225;border-radius:6px;object-fit:cover}
+.sc-row .sc-title{display:block;border:0;padding:0;background:none;color:#f7f7f8;text-align:start;font-size:16px;font-weight:650;line-height:1.45;overflow-wrap:anywhere}
+.sc-row .sc-title:hover{text-decoration:underline;text-underline-offset:3px}
+.sc-row .sc-artist{display:inline-block;color:var(--sc-muted);text-decoration:none;font-size:14px;line-height:1.6;margin-top:3px}
+.sc-row .sc-artist:hover{color:#fff;text-decoration:underline}
+.sc-row .sc-meta{display:block;margin-top:6px;font-size:13px;color:var(--sc-muted);line-height:1.5}
+.sc-row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:190px}
+#soundcloud-area .sc-row-actions button{min-height:36px;padding:7px 10px;font-size:13px}
+#sc-more{margin:24px 0}
+#sc-detail{padding:0 0 24px;border-bottom:1px solid var(--sc-line);margin-bottom:8px}
+#sc-detail-title{margin-top:18px;overflow-wrap:anywhere}
+#sc-detail-description{white-space:pre-wrap;overflow-wrap:anywhere;max-width:65ch;font-size:14px;line-height:1.7;color:var(--sc-muted);margin:14px 0}
+#sc-detail-actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+#sc-comments{margin-top:24px}
+#sc-comments h3,.sc-queue h2{font-size:18px;margin:0 0 16px;letter-spacing:-.02em}
+.sc-comment{font-size:14px;line-height:1.6;padding:10px 0}
+.sc-comment strong{display:block;color:#f7f7f8}
+.sc-comment p{color:var(--sc-muted);white-space:pre-wrap;overflow-wrap:anywhere}
+#sc-comment-form{display:flex;gap:8px;margin-top:16px}
+#sc-comment-text{width:100%;resize:vertical;min-height:44px;max-height:160px;background:#171719;color:#fff;border:1px solid var(--sc-line);border-radius:8px;padding:10px;font-size:16px}
+.sc-queue{border-left:1px solid var(--sc-line);padding-left:24px;align-self:start;position:sticky;top:24px}
+.sc-queue-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px}
+.sc-queue-head h2{margin:0}
+#sc-queue-list{list-style:none;padding:0;max-height:50dvh;overflow:auto;scrollbar-color:#555 #141416}
+.sc-queue-item{display:flex;align-items:center;gap:8px;padding:12px 0;color:var(--sc-muted);font-size:14px}
+.sc-queue-item button:first-child{flex:1;text-align:start;background:none;border:0;color:inherit;font-size:14px;overflow-wrap:anywhere;padding:4px}
+.sc-queue-item[aria-current=true]{color:#fff}
+#soundcloud-area .sc-queue-item .sc-remove{border:0;background:none;padding:8px;color:#aaa;font-size:13px;min-height:36px}
+#sc-save-queue{width:100%;margin:16px 0}
+.sc-player{position:fixed;left:184px;right:0;bottom:0;background:#141416;border-top:1px solid var(--sc-line);padding:12px 24px;z-index:35;box-shadow:0 -8px 26px #0005}
+.sc-player-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+#sc-now-title{font-size:14px;font-weight:600;flex:1;overflow-wrap:anywhere}
+.sc-player-controls{display:flex;gap:6px;align-items:center}
+#sc-volume{width:90px;accent-color:#fff}
+#sc-player-frame{display:block;width:100%;height:126px;border:0;border-radius:6px;background:#1c1c1f}
+#soundcloud-area dialog{color:#fff;background:#141416;border:1px solid var(--sc-line);border-radius:12px;width:min(440px,calc(100% - 32px));padding:28px}
+#soundcloud-area dialog::backdrop{background:#000b}
+#sc-playlist-title{display:block;margin:18px 0;width:100%;padding:12px;background:#222;color:#fff;border:1px solid #555;border-radius:7px;font-size:16px}
+@keyframes sc-arrive{from{opacity:.7;translate:0 4px}to{opacity:1;translate:0 0}}
+@media(max-width:1100px){.sc-layout{grid-template-columns:1fr}.sc-queue{position:static;border-left:0;border-top:1px solid var(--sc-line);padding:24px 0 0}.sc-row-actions{max-width:150px}}
+@media(max-width:700px){#soundcloud-area{padding:76px 18px calc(var(--sc-player-height,0px) + 36px)}.sc-header{gap:16px}.sc-header h1{font-size:24px}#sc-search-form{order:3;flex-basis:100%}.sc-account-actions{margin-left:auto}.sc-nav{gap:0}.sc-row{grid-template-columns:56px minmax(0,1fr);gap:12px}.sc-cover{width:56px;height:56px}.sc-row-actions{grid-column:2;justify-content:flex-start;max-width:none}.sc-player{left:0;padding:10px 12px}.sc-player-controls{flex-wrap:wrap}#sc-now-title{flex-basis:100%}.sc-player #sc-volume{width:65px}.sc-nav button{padding:10px!important}#sc-comment-form{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.sc-row{animation:none}#soundcloud-area *{scroll-behavior:auto;transition:none!important}}

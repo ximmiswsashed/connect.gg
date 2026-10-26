@@ -153,6 +153,8 @@ window.ConnectPortal = (() => {
   function view(which){
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     el('shooter-area').hidden=which!=='shooter';
+    el('soundcloud-area').hidden=which!=='soundcloud';
+    document.body.classList.toggle('browsing-soundcloud',which==='soundcloud');
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.toggle('browsing-youtube',which==='youtube');
     document.body.classList.toggle('playing-shooter',which==='shooter');
@@ -161,12 +163,15 @@ window.ConnectPortal = (() => {
     el('nav-game').setAttribute('aria-current',which==='game'?'page':'false');
     el('nav-youtube').setAttribute('aria-current',which==='youtube'?'page':'false');
     el('nav-shooter').setAttribute('aria-current',which==='shooter'?'page':'false');
+    el('nav-soundcloud').setAttribute('aria-current',which==='soundcloud'?'page':'false');
+    window.NodeSoundCloud?.onNavigate(which);
     window.NodeYouTube?.onNavigate(which);
     window.NodeShooter?.onNavigate(which);
   }
   async function login(name,password) {
     if(registering){await api('/api/register',{name,password});}
-    const result=await api('/api/login',{name,password});window.NodeYouTube?.onAccount(null);token=result.token;user=result.user;generation++;
+    const result=await api('/api/login',{name,password});window.NodeYouTube?.onAccount(null);window.NodeSoundCloud?.onAccount(null);token=result.token;user=result.user;generation++;
+    window.NodeSoundCloud?.onAccount(user);
     window.NodeYouTube?.onAccount(user);
     el('signed-in-name').textContent=user.name+(user.admin?' · Admin':'');el('nav-computers').hidden=false;
     const topics=await api('/api/topics',null,'GET');
@@ -179,7 +184,7 @@ window.ConnectPortal = (() => {
     el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
     return user;
   }
-  function logout(){window.NodeShooter?.onNavigate('');window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter','playing-shooter');window.NodeYouTube?.onNavigate('');}
+  function logout(){window.NodeSoundCloud?.onAccount(null);window.NodeShooter?.onNavigate('');window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter','playing-shooter','browsing-soundcloud');window.NodeYouTube?.onNavigate('');}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
     el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
@@ -196,6 +201,7 @@ window.ConnectPortal = (() => {
   function navigate(which){view(which);window.transitionTo?.(el('dashboard-page'));window.scrollTo?.(0,0);}
   el('nav-computers').addEventListener('click',()=>navigate('computers'));el('nav-game').addEventListener('click',()=>navigate('game'));el('nav-youtube').addEventListener('click',()=>navigate('youtube'));
   el('nav-shooter').addEventListener('click',()=>navigate('shooter'));
+  el('nav-soundcloud').addEventListener('click',()=>navigate('soundcloud'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
@@ -238,7 +244,7 @@ window.ConnectPortal = (() => {
   });
   document.addEventListener('visibilitychange',()=>document.body.classList.toggle('motion-paused',document.hidden));
   return {login,logout,view,request:(path,data)=>{
-    if(!token||!path.startsWith('/api/youtube/'))return Promise.reject(new Error('Please sign in again.'));
+    if(!token||!['/api/youtube/','/api/soundcloud/'].some(prefix=>path.startsWith(prefix)))return Promise.reject(new Error('Please sign in again.'));
     return api(path,data,'POST',16000);
   }};
 })();

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
   <link rel="stylesheet" href="youtube.css?v=20261022-creators-v1">
+  <link rel="stylesheet" href="soundcloud.css?v=20261026-sc-v1">
   <link rel="stylesheet" href="node-nav.css?v=20261019-shooter-v1">
   <link rel="stylesheet" href="imposter.css?v=20261019-ballots-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -138,6 +139,7 @@
           <button id="nav-computers" type="button" aria-current="page">Computers</button>
           <button id="nav-game" type="button">Imposter</button>
           <button id="nav-youtube" type="button">YouTube</button>
+          <button id="nav-soundcloud" type="button">SoundCloud</button>
           <button id="nav-shooter" type="button">Breach Protocol</button>
         </nav>
         <button id="menu-toggle" class="btn-logout" aria-controls="side-menu" aria-expanded="false">Menu</button>
@@ -292,6 +294,19 @@
           </div>
         </div>
       </section>
+      <section id="soundcloud-area" hidden aria-labelledby="sc-title">
+        <header class="sc-header"><h1 id="sc-title"><svg class="sc-logo" viewBox="0 0 40 28" aria-hidden="true"><path d="M2 15h2v8H2zm4-4h2v12H6zm4-4h2v16h-2zm4 4h2v12h-2zm4-3a9 9 0 0 1 17 5 5 5 0 1 1 0 10H18z"/></svg>SoundCloud</h1><form id="sc-search-form" role="search"><input id="sc-query" type="search" placeholder="Search tracks, artists, playlists" aria-label="Search SoundCloud" maxlength="120" required><button id="sc-search" class="sc-button sc-primary" type="submit">Search</button></form><div class="sc-account-actions"><span id="sc-account-name"></span><button id="sc-connect" class="sc-button" type="button">Connect SoundCloud</button><button id="sc-disconnect" class="sc-button" type="button" hidden>Disconnect</button></div></header>
+        <nav class="sc-nav" aria-label="SoundCloud library"><button data-sc-view="search" aria-current="page" type="button">Explore</button><button data-sc-view="feed" type="button">Feed</button><button data-sc-view="likes" type="button">Likes</button><button data-sc-view="playlists" type="button">Playlists</button><button data-sc-view="following" type="button">Following</button><button data-sc-view="recent" type="button">History</button></nav>
+        <div class="sc-layout"><div class="sc-main"><p id="sc-error" role="alert" hidden></p>
+          <section id="sc-setup" hidden><h2>Your music starts here.</h2><p>SoundCloud search and account linking need a one-time setup by this site's owner. Once configured, everyone can search, then connect their own SoundCloud account for their library.</p><details><summary>Set up SoundCloud for Node</summary><ol><li>Register a developer app with your SoundCloud Artist Pro account at <a href="https://soundcloud.com/you/apps" target="_blank" rel="noopener noreferrer">Your apps</a>.</li><li>Use your home bridge address followed by <code>/api/soundcloud/callback</code> as the redirect URI.</li><li>On Desktop 1, run <strong>Configure SoundCloud.cmd</strong> and enter the Client ID, Client Secret, and redirect URI. The secret stays on that PC.</li><li>Return here and select <strong>Check setup</strong>. Then connect your account.</li></ol><p>No Artist Pro subscription is needed just to use this integration after the owner's app is configured. Track and account restrictions still apply.</p><a href="https://developers.soundcloud.com/docs/api/register-app" target="_blank" rel="noopener noreferrer">Official developer setup</a></details><button id="sc-check" class="sc-button" type="button">Check setup</button></section>
+          <div id="sc-browser"><h2 id="sc-heading">Find your next favorite.</h2><p id="sc-intro" class="sc-subtitle">Search SoundCloud, explore an artist, or build a queue. Connect your account to bring your library along.</p><div id="sc-filters" class="sc-filters" aria-label="Search type"><button class="sc-button" data-sc-kind="tracks" aria-pressed="true" type="button">Tracks</button><button class="sc-button" data-sc-kind="users" aria-pressed="false" type="button">Artists</button><button class="sc-button" data-sc-kind="playlists" aria-pressed="false" type="button">Playlists</button></div></div>
+          <p id="sc-status" role="status" aria-live="polite"></p>
+          <section id="sc-detail" hidden><button id="sc-back" class="sc-button" type="button">Back to results</button><h2 id="sc-detail-title" tabindex="-1"></h2><p id="sc-detail-description"></p><a id="sc-detail-link" class="sc-external" href="https://soundcloud.com" target="_blank" rel="noopener noreferrer">Open on SoundCloud</a><div id="sc-detail-actions"></div><div id="sc-comments" hidden><h3>Comments</h3><div id="sc-comment-list"></div><form id="sc-comment-form"><textarea id="sc-comment-text" aria-label="Write a SoundCloud comment" placeholder="Write a comment" rows="2" maxlength="1000" required></textarea><button id="sc-comment-send" class="sc-button" type="submit">Post</button></form></div></section>
+          <div id="sc-results" aria-label="SoundCloud results"></div><button id="sc-more" class="sc-button" type="button" hidden>Load more</button><p class="sc-note">Music provided by SoundCloud. Some tracks are previews or unavailable for embedded playback. Network restrictions still apply.</p>
+        </div><aside class="sc-queue" aria-label="Play queue"><div class="sc-queue-head"><h2>Up next</h2><button id="sc-clear-queue" class="sc-button" type="button">Clear</button></div><p id="sc-queue-empty" class="sc-note">Add tracks to keep the music going.</p><ol id="sc-queue-list"></ol><button id="sc-save-queue" class="sc-button" type="button">Save as private playlist</button><p class="sc-note">Your queue is saved separately for each Node account on this device.</p></aside></div>
+        <section id="sc-player" class="sc-player" aria-label="SoundCloud player" hidden><div class="sc-player-head"><span id="sc-now-title"></span><div class="sc-player-controls"><button id="sc-prev" class="sc-button" type="button" aria-label="Previous track">Previous</button><button id="sc-toggle" class="sc-button" type="button">Play / pause</button><button id="sc-next" class="sc-button" type="button" aria-label="Next track">Next</button><button id="sc-shuffle" class="sc-button" type="button" aria-pressed="false">Shuffle</button><button id="sc-repeat" class="sc-button" type="button" aria-pressed="false">Repeat</button><label for="sc-volume" class="sc-note">Volume</label><input id="sc-volume" type="range" min="0" max="100" value="75"><button id="sc-close-player" class="sc-button" type="button">Close player</button></div></div><iframe id="sc-player-frame" src="about:blank" title="Official SoundCloud player" allow="autoplay" referrerpolicy="strict-origin-when-cross-origin"></iframe></section>
+        <dialog id="sc-playlist-dialog" aria-labelledby="sc-playlist-heading"><form id="sc-playlist-form"><h2 id="sc-playlist-heading">Save your queue.</h2><p class="sc-note">Create a private playlist in your connected SoundCloud account.</p><label for="sc-playlist-title">Playlist name</label><input id="sc-playlist-title" maxlength="100" required><div class="sc-account-actions"><button id="sc-playlist-submit" class="sc-button sc-primary" type="submit">Create playlist</button><button id="sc-playlist-cancel" class="sc-button" type="button">Cancel</button></div><p id="sc-playlist-error" role="alert"></p></form></dialog>
+      </section>
       <section id="shooter-area" hidden aria-labelledby="shooter-title">
         <div id="shooter-intro"><svg class="shooter-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 24V8h16M40 8h16v16M56 40v16H40M24 56H8V40M22 32h20M32 22v20"/></svg><h2 id="shooter-title">Breach Protocol</h2><p class="shooter-description">Your next round starts in Oregon.</p><p class="shooter-details">Play solo with bots or use the game's private lobby to connect with friends. Mouse, keyboard and WebGL2 required.</p><button id="shooter-launch" class="btn-login" type="button">Play now</button><p id="shooter-load-status" role="status" aria-live="polite"></p><p class="shooter-details">The game loads only when you play. Leaving this tab ends your current game.</p></div>
         <div id="shooter-session" hidden><div class="shooter-toolbar"><h2>Breach Protocol</h2><div><button id="shooter-fullscreen" class="pc-action" type="button">Fullscreen</button><button id="shooter-exit" class="pc-action" type="button">Exit game</button></div></div><div id="shooter-viewport"><iframe id="shooter-frame" title="Breach Protocol — Oregon tactical shooter" src="about:blank" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></div></div>
@@ -347,7 +362,8 @@
   </div>
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
-  <script src="portal-client.js?v=20261022-session-v1"></script>
+  <script src="portal-client.js?v=20261026-sc-v1"></script>
+  <script src="soundcloud.js?v=20261026-sc-v1"></script>
   <script src="youtube.js?v=20261022-creators-v1"></script>
   <script src="shooter.js?v=20261021-round-flow-v8"></script>
   <script src="rtc-viewer.js?v=20261014-rtc-v3"></script>
@@ -371,5 +387,6 @@
   </dialog>
 </body>
 </html>
+
 
 
