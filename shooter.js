@@ -10,10 +10,12 @@ window.NodeShooter=(()=>{
   launch.disabled=true;launch.textContent='Loading…';status.textContent='Checking game files…';
   try{
    const response=await fetch(url,{cache:'no-cache',signal:requestController.signal,credentials:'omit'});
-   if(!response.ok||!(await response.text()).includes('id="game"'))throw new Error('The game files are not available yet. Try again after the website update finishes.');
+   const html=await response.text();
+   if(!response.ok||!html.includes('id="game"'))throw new Error('The game files are not available yet. Try again after the website update finishes.');
    if(current!==version||!active)return;
    el('shooter-intro').hidden=true;el('shooter-session').hidden=false;
-   frame.src=url.href;frame.focus();
+   const entry=html.match(/assets\/(index-[A-Za-z0-9_-]+\.js)/),launchUrl=new URL(url);launchUrl.searchParams.set('build',entry?.[1]||String(Date.now()));
+   frame.src=launchUrl.href;frame.focus();
   }catch(error){if(current===version){status.textContent=error.name==='AbortError'?'The download timed out. Check your connection, then try again.':error instanceof TypeError?'Cannot reach the game files. Check your connection, then try again.':error.message;launch.disabled=false;launch.textContent='Try again';}}
   finally{clearTimeout(timer);}
  });
