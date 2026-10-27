@@ -1,0 +1,111 @@
+{
+  "license": "CC0",
+  "licenseURL": "https://polyhaven.com/license",
+  "assets": [
+    {
+      "kind": "plaster",
+      "asset": "grey_plaster",
+      "channel": "diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster/grey_plaster_diff_1k.jpg",
+      "file": "plaster-diffuse.jpg"
+    },
+    {
+      "kind": "plaster",
+      "asset": "grey_plaster",
+      "channel": "rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster/grey_plaster_rough_1k.jpg",
+      "file": "plaster-rough.jpg"
+    },
+    {
+      "kind": "plaster",
+      "asset": "grey_plaster",
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grey_plaster/grey_plaster_nor_gl_1k.jpg",
+      "file": "plaster-nor_gl.jpg"
+    },
+    {
+      "kind": "fabric",
+      "asset": "denim_fabric",
+      "channel": "diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_diff_1k.jpg",
+      "file": "fabric-diffuse.jpg"
+    },
+    {
+      "kind": "fabric",
+      "asset": "denim_fabric",
+      "channel": "rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_rough_1k.jpg",
+      "file": "fabric-rough.jpg"
+    },
+    {
+      "kind": "fabric",
+      "asset": "denim_fabric",
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_nor_gl_1k.jpg",
+      "file": "fabric-nor_gl.jpg"
+    },
+    {
+      "kind": "wood",
+      "asset": "oak_wood_planks",
+      "channel": "diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/oak_wood_planks/oak_wood_planks_diff_1k.jpg",
+      "file": "wood-diffuse.jpg"
+    },
+    {
+      "kind": "wood",
+      "asset": "oak_wood_planks",
+      "channel": "rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/oak_wood_planks/oak_wood_planks_rough_1k.jpg",
+      "file": "wood-rough.jpg"
+    },
+    {
+      "kind": "wood",
+      "asset": "oak_wood_planks",
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/oak_wood_planks/oak_wood_planks_nor_gl_1k.jpg",
+      "file": "wood-nor_gl.jpg"
+    },
+    {
+      "kind": "leather",
+      "asset": "brown_leather",
+      "channel": "diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_albedo_1k.jpg",
+      "file": "leather-diffuse.jpg"
+    },
+    {
+      "kind": "leather",
+      "asset": "brown_leather",
+      "channel": "rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_rough_1k.jpg",
+      "file": "leather-rough.jpg"
+    },
+    {
+      "kind": "leather",
+      "asset": "brown_leather",
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_nor_gl_1k.jpg",
+      "file": "leather-nor_gl.jpg"
+    },
+    {
+      "kind": "metal",
+      "asset": "metal_plate",
+      "channel": "diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate/metal_plate_diff_1k.jpg",
+      "file": "metal-diffuse.jpg"
+    },
+    {
+      "kind": "metal",
+      "asset": "metal_plate",
+      "channel": "rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate/metal_plate_rough_1k.jpg",
+      "file": "metal-rough.jpg"
+    },
+    {
+      "kind": "metal",
+      "asset": "metal_plate",
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate/metal_plate_nor_gl_1k.jpg",
+      "file": "metal-nor_gl.jpg"
+    }
+  ]
+}
