@@ -1,0 +1,92 @@
+[
+  {
+    "operator": "ash",
+    "id": 0,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/ash",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/4uyWdmCF6zI9vcn4vKp9zx/1b9393a63e1071daeccb95732e530d40/r6-operator-ash_229846.png",
+    "bytes": 174035,
+    "sha256": "1da08058360a0f405a177564978d473f356dff4f67f38dcc88b1a7f241a524bc",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "smoke",
+    "id": 1,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/smoke",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/5NUuXBKokP1KmAGR8Q7fqE/9628143388fc1c2f50162c1ccdf94942/R6-operator-smoke.png",
+    "bytes": 257973,
+    "sha256": "269021e4a65d8a480f9926c033e518c266bf184798e1d82849c33d49b826c82e",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "sledge",
+    "id": 2,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/sledge",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/2p5MyJkqbsfL8kCRNJVhcz/90aa196a11f2ea49ea107aab69789053/R6-operator-sledge.png",
+    "bytes": 230845,
+    "sha256": "3489d5d9b4a8176c19cf626e0d3fbb6ea1395b9973cee59588ef51d6aaeffb5f",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "thermite",
+    "id": 3,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/thermite",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/4c4cEUFWUwXTT4p3V5wAjm/e755c2a37a050de118eabc667c55c511/R6-operator-thermite.png",
+    "bytes": 184319,
+    "sha256": "11f4a8d355ede3a87047ef488eb0fa85daf497d9bee56c31825e7b6aa532ea20",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "mute",
+    "id": 4,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/mute",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/3gItFrDP0bBZsDXPdPp8ni/4314eb876028a87ae7fb20cc3215d3f6/R6-operator-mute.png",
+    "bytes": 250539,
+    "sha256": "0e87a110b643c26e3bb380e1f2714e12e31e6018c1b9309ba53922a114a7db1a",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "vigil",
+    "id": 5,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/vigil",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/bPE2opWKKK0BPVx6I1H4b/4e15d30820900ecd0794ef90e1361d5a/R6-operator-vigil.png",
+    "bytes": 205967,
+    "sha256": "edf5a2e05095637c02323000cd2d6cd328f363ff9aaf88d0adaf205e90107db2",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "bandit",
+    "id": 6,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/bandit",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/7uF3w5MYCFA1zikIkECPi9/f03570fd8c7739361619726638561c7a/R6-operator-bandit.png",
+    "bytes": 200177,
+    "sha256": "bfae42ed38207ec7055bccafe8c811b5034cb3f7cc19459b5428118f708b989a",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "ela",
+    "id": 7,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/ela",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/3cpkHAvjm3RLhEoTqs090m/35a7595eb2f2431213656d66da8a9af8/R6-operator-ela.png",
+    "bytes": 224765,
+    "sha256": "720f25ecbab6d75f4d4197d04a866a17a6cbcdcd9bf43fee85279ea0df69bb89",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "ace",
+    "id": 8,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/ace",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/3VknamIo6E87ELFbLqk1dx/a54751fe2435104ed35b5e6ee660ef72/r6s-operator-ace.png",
+    "bytes": 242909,
+    "sha256": "181b6435916e6614add37567361dfe5615fb5a3061519973495da9990e3ca774",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  },
+  {
+    "operator": "twitch",
+    "id": 9,
+    "sourcePage": "https://www.ubisoft.com/en-us/game/rainbow-six/siege/game-info/operators/twitch",
+    "asset": "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/5jaeo9LkOu6deQz4mOF9a2/9a07011ac08bc25d58cbfc828b442e3a/R6-operator-twitch.png",
+    "bytes": 187987,
+    "sha256": "37f204ca924781802353e229ba2ad3fbd046aaba38f64430fd12bcbf4448bd68",
+    "credit": "Official promotional operator artwork. \u00a9 Ubisoft. Used for the requested Siege-style selection interface; not an extracted game model."
+  }
+]
