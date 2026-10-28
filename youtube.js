@@ -61,6 +61,10 @@ window.NodeYouTube = (() => {
     finally{if(generation===epoch)syncBusy=false;}
   }
   function pause(){snapshot();sync();try{yt?.pauseVideo();}catch(_){}clearInterval(timer);timer=null;}
+  function trackProgress(){
+    clearInterval(timer);timer=null;
+    if(active&&ready&&yt)timer=setInterval(()=>{snapshot();if(Date.now()-lastSync>10000)sync();},1000);
+  }
   function showToolbar(show){
     area.classList.toggle('yt-toolbar-collapsed',!show);
     toolbarToggle.setAttribute('aria-expanded',String(show));toolbarToggle.setAttribute('aria-label',show?'Hide YouTube toolbar':'Show YouTube toolbar');
@@ -111,8 +115,8 @@ window.NodeYouTube = (() => {
           if(version!==playerVersion||generation!==epoch)return;
           resumeTarget=item.position>0?item.position:null;resumeDeadline=Date.now()+5000;
           if(item.position>0)event.target.seekTo(item.position,true);ready=true;
-          if(userGesture)event.target.playVideo();else event.target.pauseVideo();
-          clearInterval(timer);timer=setInterval(()=>{snapshot();if(Date.now()-lastSync>10000)sync();},1000);
+          if(userGesture&&active)event.target.playVideo();else event.target.pauseVideo();
+          trackProgress();
         },
         onStateChange:()=>{if(version===playerVersion&&generation===epoch){snapshot();sync();}},
         onError:event=>{if(version!==playerVersion||generation!==epoch)return;
@@ -180,6 +184,14 @@ window.NodeYouTube = (() => {
         if(active&&!current&&!showingHistory&&history.length)play(history[0],false);if(showingHistory)showHistory();
       }).catch(()=>{if(generation===epoch)el('youtube-history-status').textContent='Account history is offline. Videos saved on this device are still available.';});
     },
-    onNavigate(which){active=which==='youtube';if(!active){pause();return;}if(current)play(current,false);else if(history.length)play(history[0],false);else status('Search YouTube to find your next video.');}
+    onNavigate(which){
+      active=which==='youtube';if(!active){pause();return;}
+      // Retain the live iframe/API instance across Node tabs. Destroying it on
+      // every return races YouTube's iframe lifecycle and can leave a blank view.
+      if(!stage.hidden&&current){if(yt)trackProgress();else play(current,false);return;}
+      // Preserve History and search results rather than reopening an old video.
+      if(!current&&!showingHistory&&history.length)play(history[0],false);
+      else if(!current&&!showingHistory)status('Search YouTube to find your next video.');
+    }
   };
 })();
