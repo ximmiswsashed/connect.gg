@@ -99,3 +99,41 @@ body.browsing-youtube .dash-main{max-width:none;padding:0}
 #youtube-area .youtube-error{position:relative;z-index:6;max-width:680px;margin:12px auto;padding:14px 18px;background:#251414;border-radius:10px;line-height:1.6;color:#ffb8b8}
 @media(max-width:700px){#youtube-area .yt-sidebar{overflow-x:auto;flex-wrap:nowrap}#youtube-area .yt-sidebar-button{flex:none;width:auto;min-width:64px}#youtube-area .yt-topbar{column-gap:4px}#youtube-area .yt-brand>span{font-size:19px}}
 @media(prefers-reduced-motion:reduce){#youtube-area *{transition:none!important;scroll-behavior:auto!important}}
+
+/* History follows YouTube's day-grouped, horizontal browsing layout. */
+#youtube-area.yt-history .yt-topics{display:none}
+#youtube-area #youtube-history-panel{max-width:1200px;margin:0 auto;padding-top:24px}
+#youtube-area #youtube-history-title{font-size:34px;font-weight:700;margin-bottom:30px}
+#youtube-area .yt-history-layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:48px;align-items:start}
+#youtube-area .yt-history-day{margin-bottom:36px}
+#youtube-area .yt-history-day h3{font-size:20px;font-weight:600;margin:0 0 18px}
+#youtube-area .yt-history-row{display:grid;grid-template-columns:minmax(150px,240px) minmax(0,1fr);gap:16px;margin-bottom:20px}
+#youtube-area .yt-history-thumbnail{position:relative;display:block;width:100%;align-self:start;aspect-ratio:16/9;padding:0;border:0;border-radius:10px;overflow:hidden;background:#222;cursor:pointer}
+#youtube-area .yt-history-thumbnail img{width:100%;height:100%;object-fit:cover}
+#youtube-area .yt-history-thumbnail progress{position:absolute;bottom:0;left:0;margin:0;height:3px;border-radius:0}
+#youtube-area .yt-history-thumbnail progress::-webkit-progress-value{background:#ff0033}
+#youtube-area .yt-history-thumbnail progress::-moz-progress-bar{background:#ff0033}
+#youtube-area .yt-history-duration{position:absolute;right:6px;bottom:8px;background:#000c;color:#fff;padding:2px 4px;border-radius:4px;font-size:12px;font-variant-numeric:tabular-nums}
+#youtube-area .yt-history-copy{min-width:0;padding-top:1px}
+#youtube-area .yt-history-video-title{display:block;text-align:left;font-family:inherit;font-size:18px;font-weight:500;line-height:1.4;background:none;border:0;color:#f1f1f1;padding:0;margin-bottom:8px;cursor:pointer;overflow-wrap:anywhere}
+#youtube-area .yt-history-video-title:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+#youtube-area .yt-history-copy .youtube-channel{margin:0 0 4px;font-size:13px}
+#youtube-area .yt-history-copy .yt-watch-time{margin-top:12px;line-height:1.5;color:#aaa}
+#youtube-area .yt-history-tools{position:sticky;top:calc(var(--yt-toolbar-space) + 24px);color:#aaa;font-size:13px;line-height:1.6}
+#youtube-area .yt-history-tools label{display:block;font-size:14px;color:#f1f1f1;margin-bottom:8px}
+#youtube-area #youtube-history-filter{width:100%;min-width:0;border:0;border-bottom:1px solid #777;background:transparent;color:#fff;padding:10px 0;font:inherit;border-radius:0;caret-color:#fff}
+#youtube-area #youtube-history-filter::placeholder{color:#aaa}
+#youtube-area #youtube-history-status{font-size:13px;margin:20px 0 12px}
+#youtube-area .yt-shorts-heading h2{font-size:28px;margin:16px 0 8px}
+#youtube-area .yt-shorts-heading p,#youtube-area .yt-shorts-note{font-size:13px;color:#aaa}
+#youtube-area.yt-shorts.yt-watching .yt-shorts-heading,#youtube-area.yt-shorts.yt-watching .yt-shorts-note{display:none}
+#youtube-area.yt-shorts.yt-watching .youtube-frame{aspect-ratio:9/16;width:min(calc((100dvh - var(--yt-toolbar-space) - 90px)*9/16),100%);height:auto;background:#000}
+#youtube-area.yt-shorts.yt-watching .yt-player-viewport{height:calc(100dvh - var(--yt-toolbar-space) - 64px);padding:8px calc(var(--yt-rail) + 4px)}
+#youtube-area.yt-shorts .yt-shorts-navigation{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 0}
+#youtube-area .yt-shorts-navigation[hidden]{display:none}
+#youtube-area.yt-shorts.yt-watching .yt-shorts-navigation{padding:6px;margin:0 0 14px;white-space:nowrap}
+#youtube-area .yt-shorts-navigation span{font-size:13px;font-variant-numeric:tabular-nums;color:#aaa;min-width:42px;text-align:center}
+#youtube-area .yt-shorts-navigation button{min-height:36px}
+#youtube-area.yt-shorts.yt-watching .yt-video-title,#youtube-area.yt-shorts.yt-watching .youtube-foot{width:min(440px,calc(100% - var(--yt-rail) * 2 - 16px))}
+@media(max-width:1100px){#youtube-area .yt-history-layout{grid-template-columns:minmax(0,1fr);gap:24px}#youtube-area .yt-history-tools{grid-row:1;position:static;max-width:400px}#youtube-area .yt-history-tools p{display:none}#youtube-area #youtube-history-title{margin-bottom:20px}}
+@media(max-width:700px){#youtube-area .yt-history-row{grid-template-columns:minmax(120px,42%) minmax(0,1fr);gap:12px}#youtube-area .yt-history-video-title{font-size:14px}#youtube-area .yt-history-copy .yt-watch-time{font-size:11px;margin-top:6px}#youtube-area .yt-history-copy .youtube-published{display:none}#youtube-area #youtube-history-title{font-size:28px}#youtube-area .yt-history-day h3{font-size:18px}#youtube-area.yt-shorts.yt-watching .yt-player-viewport{padding:8px;height:calc(100dvh - var(--yt-toolbar-space) - 64px)}}

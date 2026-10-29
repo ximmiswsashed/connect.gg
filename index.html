@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
-  <link rel="stylesheet" href="youtube.css?v=20261022-creators-v1">
+  <link rel="stylesheet" href="youtube.css?v=20261029-shorts-v1">
   <link rel="stylesheet" href="soundcloud.css?v=20261026-sc-v1">
   <link rel="stylesheet" href="node-nav.css?v=20261019-shooter-v1">
   <link rel="stylesheet" href="imposter.css?v=20261019-ballots-v1">
@@ -269,6 +269,7 @@
         <div class="yt-shell">
           <aside id="youtube-sidebar" class="yt-sidebar" aria-label="Video navigation">
             <button id="youtube-home" class="yt-sidebar-button" type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3z"/></svg><span>Home</span></button>
+            <button id="youtube-shorts" class="yt-sidebar-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 3-9 5a4 4 0 0 0 0 7l3 1-3 2a2 2 0 0 0 3 3l9-5a4 4 0 0 0 0-7l-3-1 3-2a2 2 0 0 0-3-3Z"/><path d="m10 9 5 3-5 3Z"/></svg><span>Shorts</span></button>
             <button id="youtube-history" class="yt-sidebar-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6M12 7v5l3 2"/></svg><span>History</span></button>
             <button class="yt-sidebar-button" type="button" data-youtube-query="gaming"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10c3 0 4 3 4 8s-3 5-6 1H9c-3 4-6 4-6-1s1-8 4-8zM6 12h4M8 10v4M15 12h.01M18 13h.01"/></svg><span>Gaming</span></button>
             <button class="yt-sidebar-button" type="button" data-youtube-query="music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13M9 8l12-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="18" cy="16" rx="3" ry="2"/></svg><span>Music</span></button>
@@ -280,10 +281,12 @@
             <div id="youtube-topics" class="yt-topics" aria-label="Video topics"><button type="button" id="youtube-all" aria-pressed="true">All</button><button type="button" data-youtube-query="Rainbow Six Siege">Rainbow Six Siege</button><button type="button" data-youtube-query="gaming">Gaming</button><button type="button" data-youtube-query="music">Music</button><button type="button" data-youtube-query="technology">Technology</button><button type="button" data-youtube-query="science">Science</button></div>
         <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
         <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
-        <section id="youtube-history-panel" hidden aria-labelledby="youtube-history-title"><h2 id="youtube-history-title" tabindex="-1">Watch history</h2><p id="youtube-history-status" role="status">History is private to your account.</p><p id="youtube-history-empty">Your next video starts your history. Search for something you love.</p><div id="youtube-history-list" class="youtube-results"></div></section>
+        <section id="youtube-history-panel" hidden aria-labelledby="youtube-history-title"><h2 id="youtube-history-title" tabindex="-1">Watch history</h2><div class="yt-history-layout"><div><p id="youtube-history-empty">Videos you watch will appear here.</p><div id="youtube-history-list"></div></div><aside class="yt-history-tools"><label for="youtube-history-filter">Search watch history</label><input id="youtube-history-filter" type="search" placeholder="Search watch history" autocomplete="off"><p id="youtube-history-status" role="status">History is private to your account.</p><p>Resume any video exactly where you left off.</p></aside></div></section>
+        <section id="youtube-shorts-panel" hidden aria-labelledby="youtube-shorts-title"><div class="yt-shorts-heading"><h2 id="youtube-shorts-title" tabindex="-1">Shorts</h2><p>Short videos, one at a time.</p></div><p class="yt-shorts-note">Short-video search may also include wider videos.</p></section>
         <div class="yt-watch-layout">
         <div id="youtube-stage" class="youtube-stage" hidden>
           <div class="yt-player-viewport"><div class="youtube-frame"><iframe id="youtube-player" title="YouTube video player" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div></div>
+          <div id="youtube-shorts-navigation" class="yt-shorts-navigation" hidden><button id="youtube-shorts-prev" type="button" class="pc-action" aria-label="Previous Short">Previous</button><span id="youtube-shorts-position" role="status"></span><button id="youtube-shorts-next" type="button" class="pc-action" aria-label="Next Short">Next</button></div>
           <h2 id="youtube-video-title" class="yt-video-title"></h2>
           <div class="youtube-foot"><div class="youtube-video-details"><a id="youtube-video-channel" class="yt-video-channel" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer"></a><time id="youtube-video-date" class="youtube-published" hidden></time></div><div class="yt-watch-actions"><button id="youtube-back" class="pc-action" type="button">Back to videos</button><a id="youtube-open" class="pc-action" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube</a></div></div>
         </div>
@@ -364,7 +367,7 @@
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20261026-sc-v1"></script>
   <script src="soundcloud.js?v=20261026-sc-v1"></script>
-  <script src="youtube.js?v=20261028-return-v1"></script>
+  <script src="youtube.js?v=20261029-shorts-v1"></script>
   <script src="shooter.js?v=20261027-combat-v20"></script>
   <script src="rtc-viewer.js?v=20261014-rtc-v3"></script>
   <script src="app.js?v=20261014-rtc-v3"></script>
