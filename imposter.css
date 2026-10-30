@@ -36,6 +36,10 @@
 .player-avatar{flex:none;width:28px;height:28px;border-radius:8px;background:#242429;display:grid;place-items:center;font-size:12px;font-weight:800}
 #game-players li>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
 #game-players small{margin-left:auto;font-size:9px;color:#b6b6c2}
+#game-area .player-kick{margin-left:auto;flex:none;min-height:28px;padding:4px 9px;border:1px solid #505055;border-radius:6px;background:transparent;color:#ddd;font:inherit;font-size:12px;cursor:pointer}
+#game-area .player-kick:hover{background:#29292d;color:#fff}
+#game-area .player-kick:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#game-area .player-kick:disabled{opacity:.5;cursor:wait}
 #game-area .vote-panel{padding:0;min-width:0}
 #game-area #game-vote-ready{width:100%;min-height:40px;text-align:center}
 #game-area #game-voting{padding:16px;background:#161619;border:1px solid #4c4c56;border-radius:10px}

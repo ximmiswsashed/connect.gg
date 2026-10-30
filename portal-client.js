@@ -30,15 +30,15 @@ window.ConnectPortal = (() => {
   }
   function secretOff(){revealed=false;el('game-secret').textContent='';el('game-secret').hidden=true;el('game-reveal').textContent='Reveal';el('game-reveal').setAttribute('aria-expanded','false');el('game-secret').classList.remove('imposter');el('game-card').classList.remove('is-revealed');}
   function message(text){el('game-message').textContent=text;}
-  let chatKey='',lastTyped=0;
+  let chatKey='',chatRoundKey='',lastTyped=0;
   function presence(){
     const log=el('game-chat-log'),visible=!document.hidden&&!el('game-area').hidden&&log.scrollHeight-log.scrollTop-log.clientHeight<24;
-    return {read:visible?(room?.messages?.at(-1)?.id||0):0,typing:visible&&!!el('game-chat-input').value.trim()&&Date.now()-lastTyped<2000};
+    return {round:room?.round,read:visible?(room?.messages?.at(-1)?.id||0):0,typing:visible&&!!el('game-chat-input').value.trim()&&Date.now()-lastTyped<2000};
   }
   function renderChat(next){
     el('typing-names').textContent=(next.typing||[]).join(', ')+((next.typing||[]).length>1?' are typing':' is typing');
     el('game-typing').hidden=!(next.typing||[]).length;
-    const messages=next.messages||[],key=next.code+':'+messages.map(m=>m.id).join(',')+JSON.stringify(next.readers||[]);
+    const messages=next.messages||[],key=next.code+':'+next.round+':'+messages.map(m=>m.id).join(',')+JSON.stringify(next.readers||[]);
     if(key===chatKey)return;
     const log=el('game-chat-log'),atBottom=log.scrollHeight-log.scrollTop-log.clientHeight<60,newRoom=!chatKey.startsWith(next.code+':');
     chatKey=key;
@@ -52,13 +52,15 @@ window.ConnectPortal = (() => {
     if(atBottom||newRoom)log.scrollTop=log.scrollHeight;
   }
   function render(next) {
+    if(room&&room.code===next.code&&next.round<room.round)return;
     const phaseChanged=!room||room.phase!==next.phase||room.round!==next.round||room.code!==next.code;
-    if(!room||room.code!==next.code){el('game-chat-input').value='';el('game-chat-error').textContent='';chatKey='';}
+    const nextChatRound=next.code+':'+next.round;
+    if(!room||chatRoundKey!==nextChatRound){el('game-chat-input').value='';el('game-chat-error').textContent='';chatKey='';lastTyped=0;chatRoundKey=nextChatRound;}
     if(!room||room.round!==next.round||room.phase!==next.phase)secretOff();
     room=next;el('game-entry').hidden=true;el('game-room').hidden=false;
     el('game-room').setAttribute('data-phase',room.phase);
     el('lobby-code').textContent=room.code;el('game-player-name').textContent=user.name;
-    const players=el('game-players'),playerKey=JSON.stringify(room.players.map(p=>[p.id,p.name,p.color,p.host]));
+    const players=el('game-players'),playerKey=JSON.stringify([room.host,room.phase,room.players.map(p=>[p.id,p.name,p.color,p.host])]);
     if(players._playerKey!==playerKey){
       players._playerKey=playerKey;
       players.replaceChildren(...room.players.map(player=>{
@@ -67,6 +69,15 @@ window.ConnectPortal = (() => {
         avatar.style.color=player.color;name.textContent=player.name;
         item.append(avatar,name);item.style.color=player.color;
         if(player.host){const badge=document.createElement('small');badge.textContent='Host';item.append(badge);}
+        else if(room.host){
+          const kick=document.createElement('button');kick.type='button';kick.className='player-kick';kick.textContent='Kick';kick.setAttribute('aria-label','Remove '+player.name+' from the lobby');
+          const code=room.code,activeRound=room.phase!=='waiting';
+          kick.addEventListener('click',async()=>{
+            if(!window.confirm('Remove '+player.name+' from the lobby?'+(activeRound?' This will end the current round.':'')))return;
+            if(!room||room.code!==code)return;kick.disabled=true;
+            try{await action('kick',{player:player.id,code});}finally{kick.disabled=false;}
+          });item.append(kick);
+        }
         return item;
       }));
     }
@@ -112,6 +123,7 @@ window.ConnectPortal = (() => {
       el('game-result').classList.toggle('imposter-won',room.result.winner!=='players');
       el('game-result-title').textContent=room.result.winner==='players'?'Caught in the act.':'The imposter fooled you.';
       el('game-result-copy').textContent=room.result.imposter+' was the imposter. '+(room.result.winner==='players'?'Players win!':'Imposter wins!')+(room.result.tie?' The vote was tied.':'');
+      if(room.result.word)el('game-result-copy').textContent+=' The word was '+room.result.word+'.';
       if(phaseChanged)el('game-result-votes').replaceChildren(...(room.result.votes||[]).map(vote=>{
         const row=document.createElement('div'),name=document.createElement('span'),bar=document.createElement('progress'),count=document.createElement('span');
         name.textContent=vote.name;bar.max=room.players.length;bar.value=vote.count;bar.setAttribute('aria-label',vote.name+' votes');count.textContent=String(vote.count);row.append(name,bar,count);return row;
@@ -129,7 +141,7 @@ window.ConnectPortal = (() => {
   async function refresh(){
     if(pollBusy||!room||!token)return;
     pollBusy=true;const current=generation;
-    try {const next=await api('/api/lobby/state',presence(),'POST',6000);if(current===generation){refreshFailures=0;if(connectionNotice){message('');connectionNotice=false;}if(el('game-area').hidden||document.body.classList.contains('viewing-desktop'))room=next;else render(next);}}
+    try {const next=await api('/api/lobby/state',presence(),'POST',6000);if(current===generation){if(room&&room.code===next.code&&next.round<room.round)return;refreshFailures=0;if(connectionNotice){message('');connectionNotice=false;}if(el('game-area').hidden||document.body.classList.contains('viewing-desktop'))room=next;else render(next);}}
     catch(error){
       if(current!==generation)return;
       if(!error.status){
@@ -184,7 +196,7 @@ window.ConnectPortal = (() => {
     el('node-panel-toggle').setAttribute('aria-label','Hide Node menu');
     return user;
   }
-  function logout(){window.NodeSoundCloud?.onAccount(null);window.NodeShooter?.onNavigate('');window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter','playing-shooter','browsing-soundcloud');window.NodeYouTube?.onNavigate('');}
+  function logout(){window.NodeSoundCloud?.onAccount(null);window.NodeShooter?.onNavigate('');window.NodeYouTube?.onAccount(null);generation++;clearInterval(poll);poll=null;api('/api/logout').catch(()=>{});token='';user=null;room=null;chatKey='';chatRoundKey='';lastTyped=0;el('game-chat-input').value='';secretOff();el('game-entry').hidden=false;el('game-room').hidden=true;document.body.classList.remove('node-signed-in','node-menu-hidden','browsing-youtube','playing-imposter','playing-shooter','browsing-soundcloud');window.NodeYouTube?.onNavigate('');}
   el('account-toggle').addEventListener('click',()=>{
     registering=!registering;el('account-submit').textContent=registering?'Create account':'Sign in';
     el('account-title').textContent=registering?'Make yourself at home.':'Welcome back.';
@@ -210,10 +222,10 @@ window.ConnectPortal = (() => {
   el('game-chat-form').addEventListener('submit',async event=>{
     event.preventDefault();const input=el('game-chat-input'),button=el('game-chat-send'),text=input.value.trim();
     if(!text||button.disabled)return;
-    const current=generation,code=room?.code;button.disabled=true;el('game-chat-error').textContent='';
-    try {const next=await api('/api/lobby/chat',{text});if(current!==generation||room?.code!==code)return;
+    const current=generation,code=room?.code,round=room?.round;button.disabled=true;el('game-chat-error').textContent='';
+    try {const next=await api('/api/lobby/chat',{text,round});if(current!==generation||room?.code!==code||room?.round!==round)return;
       render(next);if(input.value.trim()===text)input.value='';el('game-chat-log').scrollTop=el('game-chat-log').scrollHeight;
-    }catch(error){if(current===generation)el('game-chat-error').textContent=error.message;}
+    }catch(error){if(current===generation&&room?.code===code&&room?.round===round)el('game-chat-error').textContent=error.message;}
     finally{button.disabled=false;}
   });
   el('game-join-form').addEventListener('submit',event=>{event.preventDefault();action('join',{code:el('game-code').value});});
