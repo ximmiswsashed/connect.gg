@@ -1,4 +1,4 @@
-/* SoundCloud extends Node's monochrome workspace; styles never touch the viewer. */
+/* Audius music extends Node's monochrome workspace. */
 body.browsing-soundcloud .dash-main{max-width:none;padding:0}
 #soundcloud-area{--sc-line:#303034;--sc-muted:#b2b2bc;min-height:100dvh;padding:34px 36px calc(var(--sc-player-height,0px) + 36px);color:var(--ink);background:var(--bg)}
 #soundcloud-area[hidden]{display:none}
@@ -72,6 +72,15 @@ body.browsing-soundcloud .dash-main{max-width:none;padding:0}
 .sc-player-controls{display:flex;gap:6px;align-items:center}
 #sc-volume{width:90px;accent-color:#fff}
 #sc-player-frame{display:block;width:100%;height:126px;border:0;border-radius:6px;background:#1c1c1f}
+.au-progress{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--sc-muted);font-variant-numeric:tabular-nums}
+#au-seek{flex:1;min-width:0;accent-color:#fff}
+#au-player-status{font-size:13px;color:var(--sc-muted);margin:6px 0 0;min-height:18px}
+.au-no-cover{visibility:hidden}
+#soundcloud-area .sc-artist{background:none;border:0;padding:0;cursor:pointer;text-align:left}
+#soundcloud-area .sc-title:disabled{cursor:default;opacity:1}
+#soundcloud-area .sc-player-controls{flex-wrap:wrap}
+#soundcloud-area .sc-player[hidden]{display:none}
+#soundcloud-area audio{display:none}
 #soundcloud-area dialog{color:#fff;background:#141416;border:1px solid var(--sc-line);border-radius:12px;width:min(440px,calc(100% - 32px));padding:28px}
 #soundcloud-area dialog::backdrop{background:#000b}
 #sc-playlist-title{display:block;margin:18px 0;width:100%;padding:12px;background:#222;color:#fff;border:1px solid #555;border-radius:7px;font-size:16px}
