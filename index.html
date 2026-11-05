@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
-  <link rel="stylesheet" href="youtube.css?v=20261029-shorts-v1">
+  <link rel="stylesheet" href="youtube.css?v=20261105-sort-v1">
   <link rel="stylesheet" href="soundcloud.css?v=20261026-sc-v1">
   <link rel="stylesheet" href="node-nav.css?v=20261019-shooter-v1">
   <link rel="stylesheet" href="imposter.css?v=20261030-host-v1">
@@ -281,6 +281,7 @@
             <div id="youtube-topics" class="yt-topics" aria-label="Video topics"><button type="button" id="youtube-all" aria-pressed="true">All</button><button type="button" data-youtube-query="Rainbow Six Siege">Rainbow Six Siege</button><button type="button" data-youtube-query="gaming">Gaming</button><button type="button" data-youtube-query="music">Music</button><button type="button" data-youtube-query="technology">Technology</button><button type="button" data-youtube-query="science">Science</button></div>
         <p id="youtube-error" class="youtube-error" role="alert" hidden></p>
         <p id="youtube-status" class="youtube-status" role="status" aria-live="polite">Search YouTube to see videos here.</p>
+        <div id="youtube-sort-row" class="yt-sort-row" hidden><label for="youtube-order">Sort by</label><select id="youtube-order"><option value="relevance">Relevance</option><option value="date">Newest first</option></select></div>
         <section id="youtube-history-panel" hidden aria-labelledby="youtube-history-title"><h2 id="youtube-history-title" tabindex="-1">Watch history</h2><div class="yt-history-layout"><div><p id="youtube-history-empty">Videos you watch will appear here.</p><div id="youtube-history-list"></div></div><aside class="yt-history-tools"><label for="youtube-history-filter">Search watch history</label><input id="youtube-history-filter" type="search" placeholder="Search watch history" autocomplete="off"><p id="youtube-history-status" role="status">History is private to your account.</p><p>Resume any video exactly where you left off.</p></aside></div></section>
         <section id="youtube-shorts-panel" hidden aria-labelledby="youtube-shorts-title"><div class="yt-shorts-heading"><h2 id="youtube-shorts-title" tabindex="-1">Shorts</h2><p>Short videos, one at a time.</p></div><p class="yt-shorts-note">Short-video search may also include wider videos.</p></section>
         <div class="yt-watch-layout">
@@ -367,7 +368,7 @@
   <script src="connect-config.js?v=20260927-connect-v16"></script>
   <script src="portal-client.js?v=20261030-host-v1"></script>
   <script src="soundcloud.js?v=20261026-sc-v1"></script>
-  <script src="youtube.js?v=20261029-shorts-v1"></script>
+  <script src="youtube.js?v=20261105-sort-v1"></script>
   <script src="shooter.js?v=20261027-combat-v20"></script>
   <script src="rtc-viewer.js?v=20261014-rtc-v3"></script>
   <script src="app.js?v=20261014-rtc-v3"></script>

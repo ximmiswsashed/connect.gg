@@ -95,6 +95,7 @@ window.NodeYouTube = (() => {
     area.querySelector('.youtube-frame').replaceChildren(frame);return frame;
   }
   function home(){
+    el('youtube-sort-row').hidden=true;
     searchVersion++;loading=false;searchButton.disabled=more.disabled=false;
     area.setAttribute('aria-busy','false');
     pause();destroyPlayer();showToolbar(true);showingHistory=false;el('youtube-history-panel').hidden=true;
@@ -105,6 +106,7 @@ window.NodeYouTube = (() => {
   }
   async function play(item,userGesture=true,shortVideo=false){
     if(!account||!clean(item))return;
+    el('youtube-sort-row').hidden=true;
     pause();current={...item};showingHistory=false;el('youtube-history-panel').hidden=true;showError('');
     stage.hidden=false;area.classList.add('yt-watching','yt-menu-collapsed');el('youtube-menu').setAttribute('aria-expanded','false');
     area.classList.toggle('yt-shorts',shortVideo);area.classList.remove('yt-history');el('youtube-shorts-panel').hidden=!shortVideo;
@@ -211,8 +213,9 @@ window.NodeYouTube = (() => {
     if(loading||!account)return;
     const version=++searchVersion,generation=epoch,mode=browseMode;loading=true;searchButton.disabled=more.disabled=true;showError('');status(mode==='home'?'Loading videos…':mode==='shorts'?'Loading Shorts…':'Searching YouTube…');
     area.setAttribute('aria-busy','true');
+    el('youtube-sort-row').hidden=mode!=='search'||!stage.hidden;
     try{
-      const options={q:mode==='shorts'?(lastQuery||'popular').slice(0,92)+' #shorts':lastQuery,fresh:!append,shorts:mode==='shorts',...(append&&nextPage?{pageToken:nextPage}:{})};
+      const options={q:mode==='shorts'?(lastQuery||'popular').slice(0,92)+' #shorts':lastQuery,order:el('youtube-order').value==='date'?'date':'relevance',fresh:!append,shorts:mode==='shorts',...(append&&nextPage?{pageToken:nextPage}:{})};
       let data;
       try{data=await api(mode==='home'?'feed':'search',options);}
       catch(failure){
@@ -235,6 +238,7 @@ window.NodeYouTube = (() => {
   }
   function searchFor(query){if(!query.trim())return;const shorts=browseMode==='shorts'&&!showingHistory;lastQuery=query.trim();el('youtube-query').value=lastQuery;home();explicitBrowse=true;browseMode=shorts?'shorts':'search';shortItems=[];shortIndex=-1;results.replaceChildren();nextPage='';more.hidden=true;if(shorts){area.classList.add('yt-shorts');el('youtube-shorts-panel').hidden=false;el('youtube-shorts').setAttribute('aria-current','page');el('youtube-home').setAttribute('aria-current','false');}search();}
   el('youtube-form').addEventListener('submit',event=>{event.preventDefault();searchFor(el('youtube-query').value);});
+  el('youtube-order').addEventListener('change',()=>{if(browseMode==='search'&&lastQuery)searchFor(lastQuery);});
   for(const id of ['youtube-home','youtube-brand','youtube-all','youtube-back'])el(id).addEventListener('click',browseHome);
   el('youtube-shorts').addEventListener('click',browseShorts);
   el('youtube-shorts-prev').addEventListener('click',()=>stepShort(-1));el('youtube-shorts-next').addEventListener('click',()=>stepShort(1));
@@ -246,6 +250,7 @@ window.NodeYouTube = (() => {
   document.addEventListener('visibilitychange',()=>{if(document.hidden){snapshot();sync();}});window.addEventListener('pagehide',()=>{snapshot();sync();});
   return {
     onAccount(next){
+      el('youtube-order').value='relevance';el('youtube-sort-row').hidden=true;
       pause();epoch++;account=next?{...next,id:next.id??'name:'+next.name.normalize('NFKC').toLowerCase()}:null;history=[];current=null;pending=new Map();syncBusy=false;lastSync=0;searchVersion++;loading=false;ready=false;
       destroyPlayer();results.replaceChildren();el('youtube-history-list').replaceChildren();el('youtube-query').value='';el('youtube-history-filter').value='';nextPage='';lastQuery='';stage.hidden=true;el('youtube-history-panel').hidden=true;showingHistory=false;browseMode='home';shortItems=[];shortIndex=-1;explicitBrowse=false;el('youtube-shorts-panel').hidden=true;area.classList.remove('yt-watching','yt-shorts','yt-history');area.setAttribute('aria-busy','false');showError('');
       el('youtube-history-status').textContent='History is private to your account.';searchButton.disabled=more.disabled=false;more.hidden=true;
