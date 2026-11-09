@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css?v=20261013-youtube-v2">
   <link rel="stylesheet" href="youtube.css?v=20261105-sort-v1">
   <link rel="stylesheet" href="soundcloud.css?v=20261105-audius-v1">
+  <link rel="stylesheet" href="netflix.css?v=20261109-netflix-v1">
   <link rel="stylesheet" href="node-nav.css?v=20261019-shooter-v1">
   <link rel="stylesheet" href="imposter.css?v=20261030-host-v1">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0b0b'/%3E%3Cpath d='M9 23V9l14 14V9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -140,6 +141,7 @@
           <button id="nav-game" type="button">Imposter</button>
           <button id="nav-youtube" type="button">YouTube</button>
           <button id="nav-soundcloud" type="button">Audius</button>
+          <button id="nav-netflix" type="button">Netflix</button>
           <button id="nav-shooter" type="button">Revenant</button>
         </nav>
         <button id="menu-toggle" class="btn-logout" aria-controls="side-menu" aria-expanded="false">Menu</button>
@@ -310,6 +312,13 @@
         <section id="sc-player" class="sc-player" aria-label="Audius player" hidden><div class="sc-player-head"><span id="sc-now-title"></span><div class="sc-player-controls"><button id="sc-prev" class="sc-button" type="button" aria-label="Previous track">Previous</button><button id="sc-toggle" class="sc-button" type="button">Play</button><button id="sc-next" class="sc-button" type="button" aria-label="Next track">Next</button><button id="sc-shuffle" class="sc-button" type="button" aria-pressed="false">Shuffle</button><button id="sc-repeat" class="sc-button" type="button" aria-pressed="false">Repeat</button><label for="sc-volume" class="sc-note">Volume</label><input id="sc-volume" type="range" min="0" max="100" value="75"><button id="sc-close-player" class="sc-button" type="button">Close player</button></div></div><div class="au-progress"><span id="au-elapsed">0:00</span><input id="au-seek" type="range" min="0" max="100" step="0.1" value="0" aria-label="Playback position"><span id="au-duration">0:00</span></div><audio id="au-audio" preload="none"></audio><p id="au-player-status" role="status"></p></section>
         <dialog id="sc-playlist-dialog" aria-labelledby="sc-playlist-heading"><form id="sc-playlist-form"><h2 id="sc-playlist-heading">Save your queue.</h2><p class="sc-note">Create a playlist in your Node library on this device.</p><label for="sc-playlist-title">Playlist name</label><input id="sc-playlist-title" maxlength="100" required><div class="sc-account-actions"><button id="sc-playlist-submit" class="sc-button sc-primary" type="submit">Save playlist</button><button id="sc-playlist-cancel" class="sc-button" type="button">Cancel</button></div><p id="sc-playlist-error" role="alert"></p></form></dialog>
       </section>
+      <section id="netflix-area" hidden aria-labelledby="netflix-title">
+        <div class="nf-content"><h1 id="netflix-title">Netflix</h1><p class="nf-intro">Browse movies and shows with your Netflix account. Sign-in and playback open on Netflix in a new tab.</p>
+          <div class="nf-actions"><a class="nf-button nf-primary" href="https://www.netflix.com/browse" target="_blank" rel="noopener noreferrer">Open Netflix</a><a class="nf-button" href="https://www.netflix.com/login" target="_blank" rel="noopener noreferrer">Sign in to Netflix</a></div>
+          <form id="netflix-search-form" action="https://www.netflix.com/search" method="get" target="_blank" rel="noopener noreferrer"><label for="netflix-query">Search Netflix</label><div class="nf-search"><input id="netflix-query" name="q" type="search" maxlength="120" required autocomplete="off" placeholder="Movie, show, actor, or genre"><button class="nf-button nf-primary" type="submit">Search on Netflix</button></div></form>
+          <p class="nf-note">Already signed in? Netflix uses your existing browser session. <a href="https://help.netflix.com/en/node/30081" target="_blank" rel="noopener noreferrer">Supported browsers</a></p>
+        </div>
+      </section>
       <section id="shooter-area" hidden aria-labelledby="shooter-title">
         <div id="shooter-intro"><svg class="shooter-mark" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 24V8h16M40 8h16v16M56 40v16H40M24 56H8V40M22 32h20M32 22v20"/></svg><h2 id="shooter-title">Revenant</h2><p class="shooter-description">Your next round starts in Oregon.</p><p class="shooter-details">Play solo with bots or use the game's private lobby to connect with friends. Mouse, keyboard and WebGL2 required.</p><button id="shooter-launch" class="btn-login" type="button">Play now</button><p id="shooter-load-status" role="status" aria-live="polite"></p><p class="shooter-details">The game loads only when you play. Leaving this tab ends your current game.</p></div>
         <div id="shooter-session" hidden><div class="shooter-toolbar"><h2>Revenant</h2><div><button id="shooter-fullscreen" class="pc-action" type="button">Fullscreen</button><button id="shooter-exit" class="pc-action" type="button">Exit game</button></div></div><div id="shooter-viewport"><iframe id="shooter-frame" title="Revenant — Oregon tactical shooter" src="about:blank" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></div></div>
@@ -365,7 +374,7 @@
   </div>
 
   <script src="connect-config.js?v=20260927-connect-v16"></script>
-  <script src="portal-client.js?v=20261030-host-v1"></script>
+  <script src="portal-client.js?v=20261109-netflix-v1"></script>
   <script src="audius-core.js?v=20261105-audius-v1"></script>
   <script src="audius.js?v=20261105-audius-v1"></script>
   <script src="youtube.js?v=20261105-sort-v2"></script>

@@ -1,0 +1,16 @@
+#netflix-area{padding:28px 0;max-width:780px;margin:0 auto}
+#netflix-area[hidden]{display:none}
+#netflix-area h1{font-size:40px;line-height:1.15;letter-spacing:-.03em;font-weight:750;margin:0 0 20px}
+.nf-intro{font-size:16px;line-height:1.7;color:var(--muted);max-width:58ch}
+.nf-actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 42px}
+.nf-button{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--raised);color:var(--ink);text-decoration:none;font:inherit;font-weight:650;cursor:pointer}
+.nf-button:hover{background:#303034}
+.nf-primary{color:#111;background:#f7f7f8;border-color:#f7f7f8}
+.nf-primary:hover{background:#dcdce0}
+#netflix-search-form label{display:block;font-size:16px;font-weight:650;margin-bottom:12px}
+.nf-search{display:flex;gap:10px;align-items:stretch}
+#netflix-query{flex:1;min-width:0;font:inherit;font-size:16px;padding:12px 14px;background:var(--panel);border:1px solid #555;border-radius:8px;color:var(--ink);caret-color:#fff}
+#netflix-query::placeholder{color:#b2b2bc}
+.nf-note{margin-top:26px;font-size:14px;line-height:1.7;color:var(--muted);max-width:65ch}
+.nf-note a{color:var(--ink);text-underline-offset:3px;white-space:nowrap}
+@media(max-width:700px){#netflix-area{padding:32px 0}#netflix-area h1{font-size:32px}.nf-search{flex-direction:column}.nf-actions{margin-bottom:32px}.nf-actions .nf-button{flex:1}}

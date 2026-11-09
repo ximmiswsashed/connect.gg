@@ -166,6 +166,7 @@ window.ConnectPortal = (() => {
     el('desktop-area').hidden=which!=='computers';el('game-area').hidden=which!=='game';el('youtube-area').hidden=which!=='youtube';
     el('shooter-area').hidden=which!=='shooter';
     el('soundcloud-area').hidden=which!=='soundcloud';
+    const netflix=el('netflix-area');if(netflix)netflix.hidden=which!=='netflix';
     document.body.classList.toggle('browsing-soundcloud',which==='soundcloud');
     document.body.classList.toggle('playing-imposter',which==='game');
     document.body.classList.toggle('browsing-youtube',which==='youtube');
@@ -176,6 +177,7 @@ window.ConnectPortal = (() => {
     el('nav-youtube').setAttribute('aria-current',which==='youtube'?'page':'false');
     el('nav-shooter').setAttribute('aria-current',which==='shooter'?'page':'false');
     el('nav-soundcloud').setAttribute('aria-current',which==='soundcloud'?'page':'false');
+    el('nav-netflix')?.setAttribute('aria-current',which==='netflix'?'page':'false');
     window.NodeSoundCloud?.onNavigate(which);
     window.NodeYouTube?.onNavigate(which);
     window.NodeShooter?.onNavigate(which);
@@ -214,6 +216,7 @@ window.ConnectPortal = (() => {
   el('nav-computers').addEventListener('click',()=>navigate('computers'));el('nav-game').addEventListener('click',()=>navigate('game'));el('nav-youtube').addEventListener('click',()=>navigate('youtube'));
   el('nav-shooter').addEventListener('click',()=>navigate('shooter'));
   el('nav-soundcloud').addEventListener('click',()=>navigate('soundcloud'));
+  el('nav-netflix')?.addEventListener('click',()=>navigate('netflix'));
   el('game-create').addEventListener('click',()=>action('create'));
   el('game-chat-input').addEventListener('input',()=>{lastTyped=Date.now();});
   el('game-vote-ready').addEventListener('click',()=>action('ready_vote',{round:room?.round}));
