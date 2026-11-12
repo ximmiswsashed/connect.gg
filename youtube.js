@@ -234,8 +234,21 @@ window.NodeYouTube = (() => {
         }
       }
       if(mode!=='shorts'){
-        if(mode==='search'&&options.order==='date')searchItems.sort((a,b)=>(uploadDate(b.publishedAt)?.getTime()||0)-(uploadDate(a.publishedAt)?.getTime()||0));
-        results.replaceChildren(...searchItems.map(item=>card(item)));
+        let displayed=searchItems;
+        if(mode==='search'){
+          // Keep provider relevance dominant: freshness can move a video fewer
+          // than four places, never promote a distant off-topic result to the top.
+          // Sort a copy so pagination cannot repeatedly boost the same video.
+          const now=Date.now();
+          displayed=searchItems.map((item,index)=>{
+            const published=uploadDate(item.publishedAt)?.getTime();
+            const age=published&&published<=now?Math.max(0,(now-published)/86400000):Infinity;
+            return {item,index,score:index-3.9*Math.pow(2,-age/30)};
+          }).sort((a,b)=>options.order==='date'
+            ?(uploadDate(b.item.publishedAt)?.getTime()||0)-(uploadDate(a.item.publishedAt)?.getTime()||0)||a.index-b.index
+            :a.score-b.score||a.index-b.index).map(row=>row.item);
+        }
+        results.replaceChildren(...displayed.map(item=>card(item)));
       }
       // Empty/filtered pages may still have a valid following page.
       nextPage=typeof data.nextPageToken==='string'&&data.nextPageToken!==options.pageToken?data.nextPageToken:'';more.hidden=mode==='shorts'||!nextPage;
@@ -289,3 +302,4 @@ window.NodeYouTube = (() => {
     }
   };
 })();
+
