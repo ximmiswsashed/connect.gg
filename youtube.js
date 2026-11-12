@@ -216,6 +216,16 @@ window.NodeYouTube = (() => {
     el('youtube-sort-row').hidden=mode!=='search'||!stage.hidden;
     try{
       const options={q:mode==='shorts'?(lastQuery||'popular').slice(0,92)+' #shorts':lastQuery,order:el('youtube-order').value==='date'?'date':'relevance',fresh:!append,shorts:mode==='shorts',...(append&&nextPage?{pageToken:nextPage}:{})};
+      if(mode==='search'){
+        const format=el('youtube-format')?.value||'all';
+        el('youtube-format-note').hidden=format==='all';
+        if(format==='shorts')options.shorts=true;
+        if(format==='videos'){
+          // Exclude the Shorts tag, not all videos under four minutes.
+          const query=lastQuery.replace(/(?:^|\s)-?#shorts(?=\s|$)/gi,' ').trim();
+          options.q=(query||lastQuery).slice(0,90)+' -#shorts';
+        }
+      }
       let data;
       try{data=await api(mode==='home'?'feed':'search',options);}
       catch(failure){
@@ -261,6 +271,7 @@ window.NodeYouTube = (() => {
   function searchFor(query){if(!query.trim())return;const shorts=browseMode==='shorts'&&!showingHistory;lastQuery=query.trim();el('youtube-query').value=lastQuery;home();explicitBrowse=true;browseMode=shorts?'shorts':'search';shortItems=[];searchItems=[];shortIndex=-1;results.replaceChildren();nextPage='';more.hidden=true;if(shorts){area.classList.add('yt-shorts');el('youtube-shorts-panel').hidden=false;el('youtube-shorts').setAttribute('aria-current','page');el('youtube-home').setAttribute('aria-current','false');}search();}
   el('youtube-form').addEventListener('submit',event=>{event.preventDefault();searchFor(el('youtube-query').value);});
   el('youtube-order').addEventListener('change',()=>{if(browseMode==='search'&&lastQuery)searchFor(lastQuery);});
+  el('youtube-format')?.addEventListener('change',()=>{if(browseMode==='search'&&lastQuery)searchFor(lastQuery);});
   for(const id of ['youtube-home','youtube-brand','youtube-all','youtube-back'])el(id).addEventListener('click',browseHome);
   el('youtube-shorts').addEventListener('click',browseShorts);
   el('youtube-shorts-prev').addEventListener('click',()=>stepShort(-1));el('youtube-shorts-next').addEventListener('click',()=>stepShort(1));
@@ -273,6 +284,8 @@ window.NodeYouTube = (() => {
   return {
     onAccount(next){
       el('youtube-order').value='relevance';el('youtube-sort-row').hidden=true;
+      if(el('youtube-format'))el('youtube-format').value='all';
+      el('youtube-format-note').hidden=true;
       pause();epoch++;account=next?{...next,id:next.id??'name:'+next.name.normalize('NFKC').toLowerCase()}:null;history=[];current=null;pending=new Map();syncBusy=false;lastSync=0;searchVersion++;loading=false;ready=false;
       destroyPlayer();results.replaceChildren();el('youtube-history-list').replaceChildren();el('youtube-query').value='';el('youtube-history-filter').value='';nextPage='';lastQuery='';stage.hidden=true;el('youtube-history-panel').hidden=true;showingHistory=false;browseMode='home';shortItems=[];searchItems=[];shortIndex=-1;explicitBrowse=false;el('youtube-shorts-panel').hidden=true;area.classList.remove('yt-watching','yt-shorts','yt-history');area.setAttribute('aria-busy','false');showError('');
       el('youtube-history-status').textContent='History is private to your account.';searchButton.disabled=more.disabled=false;more.hidden=true;
@@ -302,4 +315,3 @@ window.NodeYouTube = (() => {
     }
   };
 })();
-
