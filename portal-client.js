@@ -60,7 +60,7 @@ window.ConnectPortal = (() => {
     room=next;el('game-entry').hidden=true;el('game-room').hidden=false;
     el('game-room').setAttribute('data-phase',room.phase);
     el('lobby-code').textContent=room.code;el('game-player-name').textContent=user.name;
-    const players=el('game-players'),playerKey=JSON.stringify([room.host,room.phase,room.players.map(p=>[p.id,p.name,p.color,p.host])]);
+    const players=el('game-players'),playerKey=JSON.stringify([room.host,room.canKick,room.canTakeHost,room.phase,room.players.map(p=>[p.id,p.name,p.color,p.host,p.owner])]);
     if(players._playerKey!==playerKey){
       players._playerKey=playerKey;
       players.replaceChildren(...room.players.map(player=>{
@@ -68,8 +68,20 @@ window.ConnectPortal = (() => {
         avatar.className='player-avatar';avatar.textContent=player.name.slice(0,1).toUpperCase();avatar.setAttribute('aria-hidden','true');
         avatar.style.color=player.color;name.textContent=player.name;
         item.append(avatar,name);item.style.color=player.color;
-        if(player.host){const badge=document.createElement('small');badge.textContent='Host';item.append(badge);}
-        else if(room.host){
+        if(player.host){
+          const badge=document.createElement(room.canTakeHost?'button':'small');badge.textContent='Host';
+          if(room.canTakeHost){
+            badge.type='button';badge.className='player-host-claim';badge.title='Take over as host';badge.setAttribute('aria-label','Take over hosting from '+player.name);
+            const code=room.code;
+            badge.addEventListener('click',async()=>{
+              if(!room||room.code!==code)return;badge.disabled=true;
+              try{await action('take_host',{code,player:player.id});}finally{badge.disabled=false;}
+            });
+          }
+          item.append(badge);
+        }
+        const self=player.id===user.id||player.name===user.name;
+        if((room.canKick??room.host)&&!self&&!player.owner&&(!player.host||room.canTakeHost)){
           const kick=document.createElement('button');kick.type='button';kick.className='player-kick';kick.textContent='Kick';kick.setAttribute('aria-label','Remove '+player.name+' from the lobby');
           const code=room.code,activeRound=room.phase!=='waiting';
           kick.addEventListener('click',async()=>{
@@ -129,7 +141,7 @@ window.ConnectPortal = (() => {
         name.textContent=vote.name;bar.max=room.players.length;bar.value=vote.count;bar.setAttribute('aria-label',vote.name+' votes');count.textContent=String(vote.count);row.append(name,bar,count);return row;
       }));
     }
-    el('game-instructions').textContent=room.phase==='waiting'?'Invite at least 3 players. Share the code to join.':room.phase==='countdown'?'Get ready…':room.phase==='voting'?'Everyone locks in one vote. A majority must identify the imposter.':room.phase==='result'?'Round complete. The host can end this round to play again.':'Take turns giving a clue. Who is the imposter?';
+    el('game-instructions').textContent=room.phase==='waiting'?(room.previousImposter?'Previous imposter: '+room.previousImposter+'. ':'')+'Invite at least 3 players. Share the code to join.':room.phase==='countdown'?'Get ready…':room.phase==='voting'?'Everyone locks in one vote. A majority must identify the imposter.':room.phase==='result'?'Round complete. The host can end this round to play again.':'Take turns giving a clue. Who is the imposter?';
     if(phaseChanged&&['playing','voting','result'].includes(room.phase))animate(
       el(room.phase==='result'?'game-result':room.phase==='voting'?'game-voting':'game-card'),
       [{opacity:.35,clipPath:'inset(0 0 100% 0)'},{opacity:1,clipPath:'inset(0 0 0 0)'}],600);

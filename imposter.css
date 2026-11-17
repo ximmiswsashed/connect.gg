@@ -32,14 +32,19 @@
 #game-area .role-privacy{font-size:11px;color:#a1a1ae;margin-top:16px}
 #game-area #game-countdown{font-size:clamp(80px,10vw,132px);font-weight:800;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 #game-area #game-players{margin:16px 0;max-height:22vh;scrollbar-color:#545460 transparent}
-#game-area #game-players li{display:flex;align-items:center;gap:9px;padding:7px 0;color:var(--ink);font-size:12px}
+#game-area #game-players li{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:7px 0;color:var(--ink);font-size:12px}
 .player-avatar{flex:none;width:28px;height:28px;border-radius:8px;background:#242429;display:grid;place-items:center;font-size:12px;font-weight:800}
-#game-players li>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+#game-players li>span:nth-child(2){flex:1 1 70px;min-width:0;overflow-wrap:anywhere}
 #game-players small{margin-left:auto;font-size:9px;color:#b6b6c2}
 #game-area .player-kick{margin-left:auto;flex:none;min-height:28px;padding:4px 9px;border:1px solid #505055;border-radius:6px;background:transparent;color:#ddd;font:inherit;font-size:12px;cursor:pointer}
 #game-area .player-kick:hover{background:#29292d;color:#fff}
 #game-area .player-kick:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #game-area .player-kick:disabled{opacity:.5;cursor:wait}
+#game-area .player-host-claim{margin-left:auto;flex:none;min-height:28px;padding:4px 9px;border:1px solid #505055;border-radius:6px;background:transparent;color:#ddd;font:inherit;font-size:12px;cursor:pointer}
+#game-area .player-host-claim:hover{background:#29292d;color:#fff}
+#game-area .player-host-claim:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#game-area .player-host-claim:disabled{opacity:.5;cursor:wait}
+#game-area .player-host-claim+.player-kick{margin-left:6px}
 #game-area .vote-panel{padding:0;min-width:0}
 #game-area #game-vote-ready{width:100%;min-height:40px;text-align:center}
 #game-area #game-voting{padding:16px;background:#161619;border:1px solid #4c4c56;border-radius:10px}
